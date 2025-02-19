@@ -3,10 +3,13 @@ package processor
 import (
 	"log"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
+
+var TaskResultChannels sync.Map
 
 func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression) {
 	var stack []float64
@@ -30,12 +33,17 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 
 			taskCounter++
 
+			// Создаем канал для получения результата конкретной задачи.
 			resultChan := make(chan orchestrator.Result, 1)
+
+
+			TaskResultChannels.Store(taskCounter, resultChan)
+
 			task := orchestrator.Task{
-				Id:      taskCounter,
-				Arg1:   operandA,
-				Arg2:   operandB,
-				Operation:   token,
+				Id:            taskCounter,
+				Arg1:          operandA,
+				Arg2:          operandB,
+				Operation:     token,
 				OperationTime: 5 * time.Second,
 			}
 
@@ -43,6 +51,7 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 
 			select {
 			case res := <-resultChan:
+				TaskResultChannels.Delete(taskCounter)
 				if res.Error != "" {
 					m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
 					output <- m
@@ -52,6 +61,7 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 
 				stack = append(stack, res.Result)
 			case <-time.After(5 * time.Second):
+				TaskResultChannels.Delete(taskCounter)
 				m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
 				output <- m
 				log.Printf("Expression %d, task %d timeout\n", exp.Id, task.Id)
