@@ -40,6 +40,7 @@ func CulculateExpression(input chan map[int][]string) http.HandlerFunc {
 			httpNewError(w, 500, "Internal server error")
 			return 
 		}
+		currentId++
 
 		w.Header().Set("Content-Type", "application/json") 
 		w.Write(responseData)
