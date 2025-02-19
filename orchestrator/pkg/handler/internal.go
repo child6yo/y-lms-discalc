@@ -1,9 +1,9 @@
 package handler
 
-func getTask() {
+func GetTask() {
 
 }
 
-func result() {
+func Result() {
 	
 }
