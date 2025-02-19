@@ -4,16 +4,18 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/child6yo/y-lms-discalc/orchestrator"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/handler"
+	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
 )
 
 func main() {
-	expressionInput := make(chan map[int][]string)
+	expressionInput := make(chan orchestrator.ExpAndId)
+	expressionsMap := make(chan map[int]orchestrator.Expression)
+	tasks := make(chan orchestrator.Task)
 
-	// Запуск воркеров
-	// worker.StartWorkers(input, output, 4)
+	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap)
 
-	// Запуск HTTP-сервера
 	http.HandleFunc("/calculate", handler.CulculateExpression(expressionInput))
 
 	slog.Info("Server successfully started")

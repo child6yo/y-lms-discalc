@@ -10,10 +10,15 @@ type ExpressionId struct {
 	Id int `json:"id"`
 }
 
+type ExpAndId struct {
+	Id         int
+	Expression []string
+}
+
 type Expression struct {
 	Id     int    `json:"id"`
 	Status string `json:"status"`
-	Result string `json:"result"`
+	Result float64 `json:"result"`
 }
 
 type ExpressionOutput struct {
@@ -25,14 +30,19 @@ type ExpressionList struct {
 }
 
 type Task struct {
-	Id            int       `json:"id"`
-	Arg1          string    `json:"arg1"`
-	Arg2          string    `json:"arg2"`
-	Operation     string    `json:"operation"`
-	OperationTime time.Time `json:"operation_time"`
+	Id            int           `json:"id"`
+	Arg1          float64       `json:"arg1"`
+	Arg2          float64       `json:"arg2"`
+	Operation     string        `json:"operation"`
+	OperationTime time.Duration `json:"operation_time"`
 }
 
 type Result struct {
 	Id     int     `json:"id"`
 	Result float64 `json:"result"`
+	Error  string  `json:"error"`
+}
+
+type ErrorModel struct {
+	Error string `json:"error"`
 }

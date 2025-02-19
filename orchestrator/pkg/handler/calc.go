@@ -9,7 +9,7 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 )
 
-func CulculateExpression(input chan map[int][]string) http.HandlerFunc {
+func CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req orchestrator.ExpressionInput
 	
@@ -32,15 +32,17 @@ func CulculateExpression(input chan map[int][]string) http.HandlerFunc {
 			return
 		}
 
-		expMap[currentId] = expression
-		input <- expMap
+		exps[currentId] = orchestrator.Expression{Id: currentId, Status: "Calculating...", Result: 0}
+		res := orchestrator.ExpAndId{Id: currentId, Expression: expression}
+		input <- res
+		currentId++
 
-		responseData, err := json.MarshalIndent(currentId, "", " ")
+		responce := orchestrator.ExpressionId{Id: currentId}
+		responseData, err := json.MarshalIndent(responce, "", " ")
 		if err != nil { 
 			httpNewError(w, 500, "Internal server error")
 			return 
 		}
-		currentId++
 
 		w.Header().Set("Content-Type", "application/json") 
 		w.Write(responseData)

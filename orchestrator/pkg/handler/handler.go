@@ -4,21 +4,25 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+
+	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
 var (
-	expMap = make(map[int][]string)
 	currentId = 1
-) 
+	exps = make(map[int]orchestrator.Expression)
+)
 
-type ErrorModel struct {
-	Error string `json:"error"`
+func HadleExpressionsChanel(c chan map[int]orchestrator.Expression) {
+	for exp := range c {
+		exps[currentId] = exp[currentId]
+	}
 }
 
 func httpNewError(w http.ResponseWriter, statusCode int, message string) {
 	slog.Error(message)
 
-	response := ErrorModel{Error: message}
+	response := orchestrator.ErrorModel{Error: message}
 	responseData, _ := json.MarshalIndent(response, "", " ")
 
 	http.Error(w, string(responseData), statusCode)
