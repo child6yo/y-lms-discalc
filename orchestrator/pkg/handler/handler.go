@@ -2,8 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"log/slog"
+	"log"
 	"net/http"
+	"sync"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
@@ -11,16 +12,21 @@ import (
 var (
 	currentId = 1
 	exps = make(map[int]orchestrator.Expression)
+	mu sync.Mutex
 )
 
 func HandleExpressionsChanel(c chan map[int]orchestrator.Expression) {
-	for exp := range c {
-		exps[currentId] = exp[currentId]
+	for expmap := range c {
+		for id, exp := range expmap {
+			mu.Lock()
+			exps[id] = exp
+			mu.Unlock()
+		}
 	}
 }
 
 func httpNewError(w http.ResponseWriter, statusCode int, message string) {
-	slog.Error(message)
+	log.Println("Handling error: ", message)
 
 	response := orchestrator.ErrorModel{Error: message}
 	responseData, _ := json.MarshalIndent(response, "", " ")

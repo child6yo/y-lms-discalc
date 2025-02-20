@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log/slog"
+	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/handler"
@@ -18,7 +19,33 @@ func main() {
 	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap)
 	go handler.HandleExpressionsChanel(expressionsMap)
 
-	http.HandleFunc("/api/v1/calculate", handler.CulculateExpression(expressionInput))
+	http.HandleFunc("/api/v1/calculate", func(w http.ResponseWriter, r *http.Request) {
+        if r.Method == http.MethodPost {
+            handler.GetExpressions(w, r)
+        } else {
+            http.NotFound(w, r)
+        }
+    })
+    http.HandleFunc("/api/v1/expressions", func(w http.ResponseWriter, r *http.Request) {
+        if r.Method == http.MethodGet {
+            handler.GetExpressions(w, r)
+        } else {
+            http.NotFound(w, r)
+        }
+    })
+    http.HandleFunc("/api/v1/expressions/", func(w http.ResponseWriter, r *http.Request) {
+        pattern := `/api/v1/expressions/\d+`
+        matched, err := regexp.MatchString(pattern, r.URL.Path)
+        if err != nil || !matched {
+            http.NotFound(w, r)
+            return
+        }
+        if r.Method == http.MethodGet {
+            handler.GetExpressionById(w, r)
+        } else {
+            http.NotFound(w, r)
+        }
+    })
 
 	http.HandleFunc("/internal/task", func(w http.ResponseWriter, r *http.Request) {
         switch r.Method {
@@ -31,6 +58,6 @@ func main() {
         }
     })
 
-	slog.Info("Server successfully started")
+	log.Print("Server successfully started")
 	http.ListenAndServe(":8000", nil)
 }

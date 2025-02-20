@@ -10,8 +10,10 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-var TaskResultChannels sync.Map
-var globalTaskCounter uint64
+var (
+	TaskResultChannels sync.Map
+ 	globalTaskCounter uint64
+)
 
 func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression) {
 	var stack []float64
