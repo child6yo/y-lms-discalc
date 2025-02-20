@@ -1,45 +1,27 @@
 package service
 
 import (
-	"errors"
-	"strconv"
+	"github.com/child6yo/y-lms-discalc/agent"
 )
 
-func EvaluatePostfix(tokens []string) (float64, error) {
-	var stack []float64
+func EvaluatePostfix(task agent.Task) agent.Result {
+	var res float64
 
-	for _, token := range tokens {
-		if value, err := strconv.ParseFloat(token, 64); err == nil {
-			stack = append(stack, value)
-		} else {
-			if len(stack) < 2 {
-				return 0, errors.New("invalid expression")
-			}
-			b := stack[len(stack)-1]
-			a := stack[len(stack)-2]
-			stack = stack[:len(stack)-2]
-
-			switch token {
-			case "+":
-				stack = append(stack, a+b)
-			case "-":
-				stack = append(stack, a-b)
-			case "*":
-				stack = append(stack, a*b)
-			case "/":
-				if b == 0 {
-					return 0, errors.New("division by zero")
-				}
-				stack = append(stack, a/b)
-			default:
-				return 0, errors.New("unknown operator")
-			}
+	switch task.Operation {
+	case "+":
+		res = task.Arg1 + task.Arg2
+	case "-":
+		res = task.Arg1 - task.Arg2
+	case "*":
+		res = task.Arg1 * task.Arg2
+	case "/":
+		if task.Arg2 == 0 {
+			return agent.Result{Id: task.Id, Result: 0, Error: "division by zero"}
 		}
+		res = task.Arg1 / task.Arg2
+	default:
+		return agent.Result{Id: task.Id, Result: 0, Error: "unknown operator"}
 	}
 
-	if len(stack) != 1 {
-		return 0, errors.New("invalid expression")
-	}
-
-	return stack[0], nil
+	return agent.Result{Id: task.Id, Result: res, Error: ""}
 }

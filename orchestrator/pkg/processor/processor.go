@@ -5,11 +5,13 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"sync/atomic"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
 var TaskResultChannels sync.Map
+var globalTaskCounter uint64
 
 func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression) {
 	var stack []float64
@@ -31,16 +33,14 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 			operandA := stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
 
-			taskCounter++
-
-			// Создаем канал для получения результата конкретной задачи.
 			resultChan := make(chan orchestrator.Result, 1)
 
-
-			TaskResultChannels.Store(taskCounter, resultChan)
-
+			localTaskCounter := atomic.AddUint64(&globalTaskCounter, 1)
+			key := strconv.FormatUint(localTaskCounter, 10)
+			TaskResultChannels.Store(key, resultChan)
+			
 			task := orchestrator.Task{
-				Id:            taskCounter,
+				Id:            key, 
 				Arg1:          operandA,
 				Arg2:          operandB,
 				Operation:     token,
@@ -55,16 +55,16 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 				if res.Error != "" {
 					m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
 					output <- m
-					log.Printf("Expression %d, task %d error: %v\n", exp.Id, task.Id, res.Error)
+					log.Printf("Expression %d, task %s error: %v\n", exp.Id, task.Id, res.Error)
 					return
 				}
 
 				stack = append(stack, res.Result)
-			case <-time.After(5 * time.Second):
+			case <-time.After(task.OperationTime + 5*time.Second):
 				TaskResultChannels.Delete(taskCounter)
 				m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
 				output <- m
-				log.Printf("Expression %d, task %d timeout\n", exp.Id, task.Id)
+				log.Printf("Expression %d, task %s timeout\n", exp.Id, task.Id)
 				return
 			}
 		}

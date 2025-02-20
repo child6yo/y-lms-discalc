@@ -16,8 +16,8 @@ type ExpAndId struct {
 }
 
 type Expression struct {
-	Id     int    `json:"id"`
-	Status string `json:"status"`
+	Id     int     `json:"id"`
+	Status string  `json:"status"`
 	Result float64 `json:"result"`
 }
 
@@ -30,7 +30,7 @@ type ExpressionList struct {
 }
 
 type Task struct {
-	Id            int           `json:"id"`
+	Id            string        `json:"id"`
 	Arg1          float64       `json:"arg1"`
 	Arg2          float64       `json:"arg2"`
 	Operation     string        `json:"operation"`
@@ -38,7 +38,7 @@ type Task struct {
 }
 
 type Result struct {
-	Id     int     `json:"id"`
+	Id     string  `json:"id"`
 	Result float64 `json:"result"`
 	Error  string  `json:"error"`
 }

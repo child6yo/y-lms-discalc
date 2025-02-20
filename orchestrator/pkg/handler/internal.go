@@ -22,7 +22,7 @@ func GetTask(output chan orchestrator.Task) http.HandlerFunc {
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(responseData)
 		case <- time.After(2 * time.Second):
-			httpNewError(w, 404, "There's no tasks")
+			w.WriteHeader(404)
 			return
 		}
 	}
