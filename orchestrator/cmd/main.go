@@ -16,6 +16,7 @@ func main() {
 	resultsChan := make(chan orchestrator.Result, 10)
 
 	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap)
+	go handler.HandleExpressionsChanel(expressionsMap)
 
 	http.HandleFunc("/api/v1/calculate", handler.CulculateExpression(expressionInput))
 

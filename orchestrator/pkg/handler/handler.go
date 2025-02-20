@@ -13,7 +13,7 @@ var (
 	exps = make(map[int]orchestrator.Expression)
 )
 
-func HadleExpressionsChanel(c chan map[int]orchestrator.Expression) {
+func HandleExpressionsChanel(c chan map[int]orchestrator.Expression) {
 	for exp := range c {
 		exps[currentId] = exp[currentId]
 	}
