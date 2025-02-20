@@ -10,13 +10,25 @@ import (
 )
 
 func main() {
-	expressionInput := make(chan orchestrator.ExpAndId)
-	expressionsMap := make(chan map[int]orchestrator.Expression)
-	tasks := make(chan orchestrator.Task)
+	expressionInput := make(chan orchestrator.ExpAndId, 10)
+	expressionsMap := make(chan map[int]orchestrator.Expression, 10)
+	tasks := make(chan orchestrator.Task, 30)
+	resultsChan := make(chan orchestrator.Result, 10)
 
 	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap)
 
-	http.HandleFunc("/calculate", handler.CulculateExpression(expressionInput))
+	http.HandleFunc("/api/v1/calculate", handler.CulculateExpression(expressionInput))
+
+	http.HandleFunc("/internal/task", func(w http.ResponseWriter, r *http.Request) {
+        switch r.Method {
+        case http.MethodGet:
+            handler.GetTask(tasks)
+        case http.MethodPost:
+            handler.Result(resultsChan)
+        default:
+            http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        }
+    })
 
 	slog.Info("Server successfully started")
 	http.ListenAndServe(":8000", nil)
