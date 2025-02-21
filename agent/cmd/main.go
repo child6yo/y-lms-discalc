@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/agent"
@@ -59,9 +60,12 @@ func worker(g int) {
 }
 
 func main() {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	for w := 1; w <= 5; w++ {
 		go worker(w)
 	}
 
-	select {}
+	wg.Wait()
 }

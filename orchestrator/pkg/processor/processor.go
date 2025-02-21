@@ -4,15 +4,15 @@ import (
 	"log"
 	"strconv"
 	"sync"
-	"time"
 	"sync/atomic"
+	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
 var (
 	TaskResultChannels sync.Map
- 	globalTaskCounter uint64
+	globalTaskCounter  uint64
 )
 
 func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression) {
@@ -40,9 +40,9 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 			localTaskCounter := atomic.AddUint64(&globalTaskCounter, 1)
 			key := strconv.FormatUint(localTaskCounter, 10)
 			TaskResultChannels.Store(key, resultChan)
-			
+
 			task := orchestrator.Task{
-				Id:            key, 
+				Id:            key,
 				Arg1:          operandA,
 				Arg2:          operandB,
 				Operation:     token,

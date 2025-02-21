@@ -28,7 +28,7 @@ func GetTask(output chan orchestrator.Task) http.HandlerFunc {
 	}
 }
 
-func Result(input chan orchestrator.Result) http.HandlerFunc {
+func Result() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req orchestrator.Result
 

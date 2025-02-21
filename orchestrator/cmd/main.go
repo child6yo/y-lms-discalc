@@ -10,11 +10,11 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
 )
 
+
 func main() {
 	expressionInput := make(chan orchestrator.ExpAndId, 10)
 	expressionsMap := make(chan map[int]orchestrator.Expression, 10)
 	tasks := make(chan orchestrator.Task, 30)
-	resultsChan := make(chan orchestrator.Result, 10)
 
 	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap)
 	go handler.HandleExpressionsChanel(expressionsMap)
@@ -52,12 +52,15 @@ func main() {
         case http.MethodGet:
             handler.GetTask(tasks)(w, r)
         case http.MethodPost:
-            handler.Result(resultsChan)(w, r)
+            handler.Result()(w, r)
         default:
             http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
         }
     })
 
-	log.Print("Server successfully started")
-	http.ListenAndServe(":8000", nil)
+	if err := http.ListenAndServe(":8000", nil); err != nil {
+        log.Fatalf("Failed to start server")
+    } else {
+        log.Print("Server successfully started")
+    }
 }
