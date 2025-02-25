@@ -16,6 +16,7 @@ import (
 func getEnv(key, defaultValue string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {
+		log.Print("Failed to load env")
 		return defaultValue
 	}
 	return value
@@ -29,6 +30,7 @@ func getIntEnv(key string, defaultValue int) int {
 
 	value, err := strconv.Atoi(valueStr)
 	if err != nil {
+		log.Print("Failed to load env: ", err)
 		return defaultValue
 	}
 	return value
