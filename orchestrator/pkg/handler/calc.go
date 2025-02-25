@@ -56,8 +56,8 @@ func CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
 
 func GetExpressions(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
-    defer mu.Unlock()
-	
+	defer mu.Unlock()
+
 	expressions := make([]orchestrator.Expression, 0, len(exps))
 
 	for _, value := range exps {

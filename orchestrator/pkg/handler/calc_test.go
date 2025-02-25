@@ -11,46 +11,46 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-type TestResponse1 struct { 
-	Id int `json:"id,omitempty"` 
-	Error string `json:"error,omitempty"` 
+type TestResponse1 struct {
+	Id    int    `json:"id,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func TestCalculateExpression(t *testing.T) {
 	testCases := []struct {
-		name string
-		requestBody *strings.Reader
-		expectBody TestResponse1
+		name         string
+		requestBody  *strings.Reader
+		expectBody   TestResponse1
 		expectStatus int
 	}{
 		{
-			name: "201, Created",
-			requestBody: strings.NewReader(`{"expression":"2+2"}`),
-			expectBody: TestResponse1{Id: 1},
+			name:         "201, Created",
+			requestBody:  strings.NewReader(`{"expression":"2+2"}`),
+			expectBody:   TestResponse1{Id: 1},
 			expectStatus: 201,
 		},
 		{
-			name: "422, Expression is not valid 1",
-			requestBody: strings.NewReader(`{"expression":1}`),
-			expectBody: TestResponse1{Error: "Expression is not valid"},
+			name:         "422, Expression is not valid 1",
+			requestBody:  strings.NewReader(`{"expression":1}`),
+			expectBody:   TestResponse1{Error: "Expression is not valid"},
 			expectStatus: 422,
 		},
 		{
-			name: "422, Expression is not valid 2",
-			requestBody: strings.NewReader(`{"expression":"2("}`),
-			expectBody: TestResponse1{Error: "Expression is not valid"},
+			name:         "422, Expression is not valid 2",
+			requestBody:  strings.NewReader(`{"expression":"2("}`),
+			expectBody:   TestResponse1{Error: "Expression is not valid"},
 			expectStatus: 422,
 		},
 		{
-			name: "500, Internal server error",
-			requestBody: strings.NewReader(``),
-			expectBody: TestResponse1{Error: "Internal server error"},
+			name:         "500, Internal server error",
+			requestBody:  strings.NewReader(``),
+			expectBody:   TestResponse1{Error: "Internal server error"},
 			expectStatus: 500,
 		},
 	}
 
 	c := make(chan orchestrator.ExpAndId, 5)
-	
+
 	for _, test := range testCases {
 		req := httptest.NewRequest("POST", "http://localhost:8000/api/v1/calculate", test.requestBody)
 		w := httptest.NewRecorder()
@@ -63,7 +63,6 @@ func TestCalculateExpression(t *testing.T) {
 			t.Fatalf("Test %s: error reading response body: %v", test.name, err)
 		}
 
-		
 		var r TestResponse1
 		json.Unmarshal(body, &r)
 
@@ -80,7 +79,7 @@ func TestCalculateExpression(t *testing.T) {
 func TestGetExpressions(t *testing.T) {
 	testCases := []struct {
 		name         string
-		exps        map[int]orchestrator.Expression
+		exps         map[int]orchestrator.Expression
 		expectBody   orchestrator.ExpressionList
 		expectStatus int
 	}{
@@ -100,7 +99,7 @@ func TestGetExpressions(t *testing.T) {
 		},
 		{
 			name:         "200, Empty expressions",
-			exps:        map[int]orchestrator.Expression{},
+			exps:         map[int]orchestrator.Expression{},
 			expectBody:   orchestrator.ExpressionList{Expressions: []orchestrator.Expression{}},
 			expectStatus: 200,
 		},
@@ -140,7 +139,7 @@ func TestGetExpressionById(t *testing.T) {
 	testCases := []struct {
 		name         string
 		path         string
-		exps        map[int]orchestrator.Expression
+		exps         map[int]orchestrator.Expression
 		expectBody   orchestrator.Expression
 		expectStatus int
 	}{
@@ -163,9 +162,9 @@ func TestGetExpressionById(t *testing.T) {
 			expectStatus: 404,
 		},
 		{
-			name: "500, Malformed URL",
-			path: "/api/v1/expressions/abc",
-			exps: map[int]orchestrator.Expression{},
+			name:         "500, Malformed URL",
+			path:         "/api/v1/expressions/abc",
+			exps:         map[int]orchestrator.Expression{},
 			expectBody:   orchestrator.Expression{},
 			expectStatus: 500,
 		},

@@ -62,8 +62,6 @@ func Worker(g int, url string) {
 				continue
 			}
 			postResp.Body.Close()
-
-			log.Printf("Worker %d Processed task %s", g, task.Id)
 		case <-ctx.Done():
 			log.Printf("Worker %d: Task %s exceeded time limit of %d seconds", g, task.Id, task.OperationTime)
 			continue

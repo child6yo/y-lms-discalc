@@ -42,10 +42,10 @@ func TestExpressionProcessor(t *testing.T) {
 	var wg sync.WaitGroup
 
 	config := map[string]time.Duration{
-		"+": 100*time.Millisecond,
-		"-": 100*time.Millisecond,
-		"*": 100*time.Millisecond,
-		"/": 100*time.Millisecond,
+		"+": 100 * time.Millisecond,
+		"-": 100 * time.Millisecond,
+		"*": 100 * time.Millisecond,
+		"/": 100 * time.Millisecond,
 	}
 
 	t.Parallel()
@@ -87,7 +87,7 @@ func TestExpressionProcessor(t *testing.T) {
 			res := answer[test.expression.Id]
 			if res.Status != test.expect.Status {
 				t.Fatalf("Test '%s' FAILED. Expected status: %s, Status: %s", test.name, test.expect.Status, res.Status)
-			} else if math.Abs(res.Result-test.expect.Result) > 1e-9 { 
+			} else if math.Abs(res.Result-test.expect.Result) > 1e-9 {
 				t.Fatalf("Test '%s' FAILED. Expected result: %.2f, Result: %.2f", test.name, test.expect.Result, res.Result)
 			}
 		case <-time.After(5 * time.Second):

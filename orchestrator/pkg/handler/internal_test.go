@@ -25,10 +25,10 @@ func TestGetTask(t *testing.T) {
 			name: "200, Task received",
 			prepare: func(output chan orchestrator.Task) {
 				go func() {
-					output <- orchestrator.Task{Id: "1", Arg1: 2, Arg2: 2, Operation: "+", OperationTime: 1*time.Second}
+					output <- orchestrator.Task{Id: "1", Arg1: 2, Arg2: 2, Operation: "+", OperationTime: 1 * time.Second}
 				}()
 			},
-			expectBody:   orchestrator.Task{Id: "1", Arg1: 2, Arg2: 2, Operation: "+", OperationTime: 1*time.Second},
+			expectBody:   orchestrator.Task{Id: "1", Arg1: 2, Arg2: 2, Operation: "+", OperationTime: 1 * time.Second},
 			expectStatus: 200,
 		},
 		{
@@ -172,4 +172,3 @@ func TestResultHandler(t *testing.T) {
 		})
 	}
 }
-

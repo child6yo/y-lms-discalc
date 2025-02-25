@@ -33,7 +33,7 @@ func getIntEnv(key string, defaultValue int) int {
 }
 
 func main() {
-	var url = "http://localhost:8000/internal/task"
+	var url = "http://orchestrator:8000/internal/task"
 
 	computingPower := getIntEnv("COMPUTING_POWER", 10)
 

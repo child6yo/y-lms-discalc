@@ -11,8 +11,8 @@ import (
 
 var (
 	currentId = 1
-	exps = make(map[int]orchestrator.Expression)
-	mu sync.Mutex
+	exps      = make(map[int]orchestrator.Expression)
+	mu        sync.Mutex
 )
 
 func HandleExpressionsChanel(c chan map[int]orchestrator.Expression) {

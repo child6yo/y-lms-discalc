@@ -13,15 +13,15 @@ import (
 func GetTask(output chan orchestrator.Task) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		select {
-		case task := <- output:
+		case task := <-output:
 			responseData, err := json.MarshalIndent(task, "", " ")
-			if err != nil { 
+			if err != nil {
 				httpNewError(w, 500, "Internal server error")
-				return 
+				return
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(responseData)
-		case <- time.After(2 * time.Second):
+		case <-time.After(2 * time.Second):
 			w.WriteHeader(404)
 			return
 		}

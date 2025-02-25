@@ -45,11 +45,11 @@ func (ft *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		case 4:
 			// Итерация 4: возвращаем задание, приводящее к ошибке вычисления (деление на ноль)
 			task := agent.Task{
-				Id:        "task_div0",
-				Operation: "/",
-				Arg1:      5,
-				Arg2:      0, // вызовет ошибку деления на ноль в EvaluatePostfix
-				OperationTime: 3*time.Second,
+				Id:            "task_div0",
+				Operation:     "/",
+				Arg1:          5,
+				Arg2:          0, // вызовет ошибку деления на ноль в EvaluatePostfix
+				OperationTime: 3 * time.Second,
 			}
 			data, err := json.Marshal(task)
 			if err != nil {
@@ -63,11 +63,11 @@ func (ft *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		case 5:
 			// Итерация 5: возвращаем задание для успешной обработки, но POST имитируем ошибку
 			task := agent.Task{
-				Id:        "task_post_error",
-				Operation: "+",
-				Arg1:      2,
-				Arg2:      3,
-				OperationTime: 3*time.Second,
+				Id:            "task_post_error",
+				Operation:     "+",
+				Arg1:          2,
+				Arg2:          3,
+				OperationTime: 3 * time.Second,
 			}
 			data, err := json.Marshal(task)
 			if err != nil {
@@ -81,11 +81,11 @@ func (ft *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		case 6:
 			// Итерация 6: возвращаем задание, которое должно успешно обработаться
 			task := agent.Task{
-				Id:        "task_success",
-				Operation: "+",
-				Arg1:      2,
-				Arg2:      3,
-				OperationTime: 3*time.Second,
+				Id:            "task_success",
+				Operation:     "+",
+				Arg1:          2,
+				Arg2:          3,
+				OperationTime: 3 * time.Second,
 			}
 			data, err := json.Marshal(task)
 			if err != nil {
@@ -181,4 +181,3 @@ func TestWorker(t *testing.T) {
 		t.Fatal("Timeout waiting for Worker to process a task successfully")
 	}
 }
-
