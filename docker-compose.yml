@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  orchestrator:
+    build: ./orchestrator
+    command: ./orchestrator
+    ports:
+      - 8000:8000
+    environment:
+      - TIME_ADDITION_MS=100
+      - TIME_SUBTRACTION_MS=100
+      - TIME_MULTIPLICATIONS_MS=100
+      - TIME_DIVISIONS_MS=100
+
+  agent:
+    build: ./agent
+    command: ./agent
+    ports:
+      - 8080:8080
+    depends_on:
+      - orchestrator
+    environment:
+      - COMPUTING_POWER=50
