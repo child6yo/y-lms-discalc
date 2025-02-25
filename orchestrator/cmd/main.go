@@ -3,25 +3,54 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/handler"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
 )
 
+func getEnv(key, defaultValue string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		return defaultValue
+	}
+	return value
+}
+
+func getIntEnv(key string, defaultValue int) int {
+	valueStr := getEnv(key, "")
+	if valueStr == "" {
+		return defaultValue
+	}
+
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
 
 func main() {
+    config := map[string]time.Duration{}
+    config["+"] = time.Duration(getIntEnv("TIME_ADDITION_MS", 100) * int(time.Millisecond))
+    config["-"] = time.Duration(getIntEnv("TIME_SUBTRACTION_MS", 100) * int(time.Millisecond))
+    config["*"] = time.Duration(getIntEnv("TIME_MULTIPLICATIONS_MS", 100) * int(time.Millisecond))
+    config["/"] = time.Duration(getIntEnv("TIME_DIVISIONS_MS", 100) * int(time.Millisecond))
+
 	expressionInput := make(chan orchestrator.ExpAndId, 10)
 	expressionsMap := make(chan map[int]orchestrator.Expression, 10)
 	tasks := make(chan orchestrator.Task, 30)
 
-	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap)
+	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap, config)
 	go handler.HandleExpressionsChanel(expressionsMap)
 
 	http.HandleFunc("/api/v1/calculate", func(w http.ResponseWriter, r *http.Request) {
         if r.Method == http.MethodPost {
-            handler.GetExpressions(w, r)
+            handler.CulculateExpression(expressionInput)(w, r)
         } else {
             http.NotFound(w, r)
         }
@@ -58,9 +87,6 @@ func main() {
         }
     })
 
-	if err := http.ListenAndServe(":8000", nil); err != nil {
-        log.Fatalf("Failed to start server")
-    } else {
-        log.Print("Server successfully started")
-    }
+    log.Println("Server successfully started")
+	http.ListenAndServe(":8000", nil) 
 }

@@ -33,7 +33,6 @@ func CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
 			httpNewError(w, 422, "Expression is not valid")
 			return
 		}
-
 		mu.Lock()
 		exps[currentId] = orchestrator.Expression{Id: currentId, Status: "Calculating...", Result: 0}
 		mu.Unlock()
@@ -50,6 +49,7 @@ func CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 		w.Write(responseData)
 	}
 }

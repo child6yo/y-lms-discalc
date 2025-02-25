@@ -49,6 +49,7 @@ func (ft *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 				Operation: "/",
 				Arg1:      5,
 				Arg2:      0, // вызовет ошибку деления на ноль в EvaluatePostfix
+				OperationTime: 3*time.Second,
 			}
 			data, err := json.Marshal(task)
 			if err != nil {
@@ -66,6 +67,7 @@ func (ft *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 				Operation: "+",
 				Arg1:      2,
 				Arg2:      3,
+				OperationTime: 3*time.Second,
 			}
 			data, err := json.Marshal(task)
 			if err != nil {
@@ -83,6 +85,7 @@ func (ft *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 				Operation: "+",
 				Arg1:      2,
 				Arg2:      3,
+				OperationTime: 3*time.Second,
 			}
 			data, err := json.Marshal(task)
 			if err != nil {

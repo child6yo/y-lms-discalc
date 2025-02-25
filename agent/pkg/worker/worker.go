@@ -2,6 +2,7 @@ package worker
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -33,25 +34,39 @@ func Worker(g int, url string) {
 		}
 		resp.Body.Close()
 
-		result := service.EvaluatePostfix(task)
-		if result.Error != "" {
-			log.Println("Evaluation error:", err)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(task.OperationTime)*time.Second)
+
+		resultCh := make(chan agent.Result)
+		go func() {
+			defer cancel()
+			result := service.EvaluatePostfix(task)
+			resultCh <- result
+		}()
+
+		select {
+		case result := <-resultCh:
+			if result.Error != "" {
+				log.Println("Evaluation error:", result.Error)
+				continue
+			}
+
+			resultJSON, err := json.Marshal(result)
+			if err != nil {
+				log.Println("Marshal error:", err)
+				continue
+			}
+
+			postResp, err := http.Post(url, "application/json", bytes.NewBuffer(resultJSON))
+			if err != nil {
+				log.Println("Post result error:", err)
+				continue
+			}
+			postResp.Body.Close()
+
+			log.Printf("Worker %d Processed task %s", g, task.Id)
+		case <-ctx.Done():
+			log.Printf("Worker %d: Task %s exceeded time limit of %d seconds", g, task.Id, task.OperationTime)
 			continue
 		}
-
-		resultJSON, err := json.Marshal(result)
-		if err != nil {
-			log.Println("Marshal error:", err)
-			continue
-		}
-
-		postResp, err := http.Post(url, "application/json", bytes.NewBuffer(resultJSON))
-		if err != nil {
-			log.Println("Post result error:", err)
-			continue
-		}
-		postResp.Body.Close()
-
-		log.Printf("Worker %d Processed task %s", g, task.Id)
 	}
 }

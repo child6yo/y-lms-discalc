@@ -41,12 +41,19 @@ func TestExpressionProcessor(t *testing.T) {
 	op := make(chan map[int]orchestrator.Expression, 3)
 	var wg sync.WaitGroup
 
+	config := map[string]time.Duration{
+		"+": 100*time.Millisecond,
+		"-": 100*time.Millisecond,
+		"*": 100*time.Millisecond,
+		"/": 100*time.Millisecond,
+	}
+
 	t.Parallel()
 	for _, test := range testCases {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			processExpression(test.expression, taskc, op)
+			processExpression(test.expression, taskc, op, config)
 		}()
 
 		go func() {

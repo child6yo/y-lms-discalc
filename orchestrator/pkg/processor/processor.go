@@ -15,7 +15,7 @@ var (
 	globalTaskCounter  uint64
 )
 
-func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression) {
+func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression, config map[string]time.Duration) {
 	var stack []float64
 	taskCounter := 0
 	m := make(map[int]orchestrator.Expression)
@@ -46,7 +46,7 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 				Arg1:          operandA,
 				Arg2:          operandB,
 				Operation:     token,
-				OperationTime: 5 * time.Second,
+				OperationTime: config[token],
 			}
 
 			taskChan <- task
@@ -62,7 +62,7 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 				}
 
 				stack = append(stack, res.Result)
-			case <-time.After(task.OperationTime + 5*time.Second):
+			case <-time.After(task.OperationTime + 1*time.Second):
 				TaskResultChannels.Delete(taskCounter)
 				m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
 				output <- m
@@ -84,8 +84,9 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 	log.Printf("Expression %d computed successfully, result: %v\n", exp.Id, finalResult)
 }
 
-func StartExpressionProcessor(input chan orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression) {
+func StartExpressionProcessor(input chan orchestrator.ExpAndId, taskChan chan orchestrator.Task,
+	output chan map[int]orchestrator.Expression, config map[string]time.Duration) {
 	for exp := range input {
-		go processExpression(exp, taskChan, output)
+		go processExpression(exp, taskChan, output, config)
 	}
 }
