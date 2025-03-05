@@ -11,6 +11,8 @@ services:
       - TIME_SUBTRACTION_MS=100
       - TIME_MULTIPLICATIONS_MS=100
       - TIME_DIVISIONS_MS=100
+    networks:
+      - app-network
 
   agent:
     build: ./agent
@@ -21,3 +23,9 @@ services:
       - orchestrator
     environment:
       - COMPUTING_POWER=50
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
