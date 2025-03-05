@@ -277,10 +277,8 @@
 
                 const data = await response.json();
                 const historyContent = document.getElementById("history-content");
-                const noDataMessage = document.getElementById("no-data");
 
                 historyContent.innerHTML = '';
-                noDataMessage.style.display = "none";
 
                 const expressionElement = document.createElement("div");
                 expressionElement.className = "expression-item";
