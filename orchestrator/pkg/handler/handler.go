@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"path/filepath"
 	"sync"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
@@ -32,4 +33,21 @@ func httpNewError(w http.ResponseWriter, statusCode int, message string) {
 	responseData, _ := json.MarshalIndent(response, "", " ")
 
 	http.Error(w, string(responseData), statusCode)
+}
+
+func addCORSHeaders(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+}
+
+func StaticFileHandler(w http.ResponseWriter, r *http.Request) {
+	addCORSHeaders(w)
+	absPath, err := filepath.Abs("./client/index.html")
+	if err != nil {
+		http.Error(w, "Error resolving file path", http.StatusInternalServerError)
+		return
+	}
+
+	http.ServeFile(w, r, absPath)
 }

@@ -89,6 +89,11 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/", handler.StaticFileHandler)
+
 	log.Println("Server successfully started")
-	http.ListenAndServe(":8000", nil)
+	err := http.ListenAndServe(":8000", nil)
+	if err != nil {
+		log.Println("Error starting server: ", err)
+	}
 }
