@@ -120,7 +120,7 @@ func main() {
 	httpPort := 8000
 	go startHttpServer(httpPort, expressionInput)
 	
-	gRPChost := "localhost"
+	gRPChost := "orchestrator"
 	gRPCport := "5000"
 	go startGRPCServer(gRPChost, gRPCport, tasks)
 
