@@ -1,12 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/child6yo/y-lms-discalc/agent/pkg/worker"
+
+	pb "github.com/child6yo/y-lms-discalc/agent/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func getEnv(key, defaultValue string) string {
@@ -33,6 +39,20 @@ func getIntEnv(key string, defaultValue int) int {
 }
 
 func main() {
+	host := "orchestrator"
+	port := "5000"
+	addr := fmt.Sprintf("%s:%s", host, port)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if err != nil {
+		log.Println("could not connect to grpc server: ", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	grpcClient := pb.NewOrchestratorServiceClient(conn)
+
 	var url = "http://orchestrator:8000/internal/task"
 
 	computingPower := getIntEnv("COMPUTING_POWER", 10)
@@ -42,8 +62,9 @@ func main() {
 	for w := 1; w <= computingPower; w++ {
 		go func() {
 			defer wg.Done()
-			worker.Worker(w, url)
+			worker.Worker(w, url, grpcClient)
 		}()
+		time.Sleep(1 * time.Second)
 		wg.Add(1)
 	}
 
