@@ -33,7 +33,7 @@ func (s *Server) GetTask(ctx context.Context, _ *pb.Empty) (*pb.TaskRequest, err
 			Arg2:          float32(task.Arg2),
 			Opetation:     task.Operation,
 			OperationTime: int64(task.OperationTime)}, nil
-	case <-time.After(2 * time.Second):
+	case <-time.After(3 * time.Second):
 		return nil, errors.New("time limit exceeded")
 	}
 }
