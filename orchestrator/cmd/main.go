@@ -1,16 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/handler"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
+	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/rpc"
+	pb "github.com/child6yo/y-lms-discalc/orchestrator/proto"
+	"google.golang.org/grpc"
 )
 
 func getEnv(key, defaultValue string) string {
@@ -36,20 +42,7 @@ func getIntEnv(key string, defaultValue int) int {
 	return value
 }
 
-func main() {
-	config := map[string]time.Duration{}
-	config["+"] = time.Duration(getIntEnv("TIME_ADDITION_MS", 100) * int(time.Millisecond))
-	config["-"] = time.Duration(getIntEnv("TIME_SUBTRACTION_MS", 100) * int(time.Millisecond))
-	config["*"] = time.Duration(getIntEnv("TIME_MULTIPLICATIONS_MS", 100) * int(time.Millisecond))
-	config["/"] = time.Duration(getIntEnv("TIME_DIVISIONS_MS", 100) * int(time.Millisecond))
-
-	expressionInput := make(chan orchestrator.ExpAndId, 10)
-	expressionsMap := make(chan map[int]orchestrator.Expression, 10)
-	tasks := make(chan orchestrator.Task, 30)
-
-	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap, config)
-	go handler.HandleExpressionsChanel(expressionsMap)
-
+func startHttpServer(port int, expressionInput chan orchestrator.ExpAndId) {
 	http.HandleFunc("/api/v1/calculate", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handler.CulculateExpression(expressionInput)(w, r)
@@ -78,22 +71,62 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/internal/task", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetTask(tasks)(w, r)
-		case http.MethodPost:
-			handler.Result()(w, r)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
 	http.HandleFunc("/", handler.StaticFileHandler)
 
-	log.Println("Server successfully started")
-	err := http.ListenAndServe(":8000", nil)
+	httpPort := fmt.Sprint(":", port)
+
+	log.Println("http server started at port: ", port)
+	err := http.ListenAndServe(httpPort, nil)
 	if err != nil {
-		log.Println("Error starting server: ", err)
+		log.Println("error starting http server: ", err)
+		os.Exit(1)
 	}
+}
+
+func startGRPCServer(host, port string, taskChan chan orchestrator.Task) {
+	addr := fmt.Sprintf("%s:%s", host, port)
+	lis, err := net.Listen("tcp", addr)
+
+	if err != nil {
+		log.Println("error starting tcp listener: ", err)
+		os.Exit(1)
+	}
+	
+	log.Println("tcp listener started at port: ", port)
+	grpcServer := grpc.NewServer()
+	taskServiceServer := rpc.NewServer(taskChan)
+	pb.RegisterOrchestratorServiceServer(grpcServer, taskServiceServer)
+	
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Println("error serving grpc: ", err)
+		os.Exit(1)
+	}
+}
+
+func main() {
+	config := map[string]time.Duration{}
+	config["+"] = time.Duration(getIntEnv("TIME_ADDITION_MS", 100) * int(time.Millisecond))
+	config["-"] = time.Duration(getIntEnv("TIME_SUBTRACTION_MS", 100) * int(time.Millisecond))
+	config["*"] = time.Duration(getIntEnv("TIME_MULTIPLICATIONS_MS", 100) * int(time.Millisecond))
+	config["/"] = time.Duration(getIntEnv("TIME_DIVISIONS_MS", 100) * int(time.Millisecond))
+
+	expressionInput := make(chan orchestrator.ExpAndId, 10)
+	expressionsMap := make(chan map[int]orchestrator.Expression, 10)
+	tasks := make(chan orchestrator.Task, 30)
+
+	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap, config)
+	go handler.HandleExpressionsChanel(expressionsMap)
+
+	httpPort := 8000
+	go startHttpServer(httpPort, expressionInput)
+	
+	gRPChost := "localhost"
+	gRPCport := "5000"
+	go startGRPCServer(gRPChost, gRPCport, tasks)
+
+	log.Println("orchestrator successfully started")
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	wg.Wait()
 }
