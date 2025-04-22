@@ -114,18 +114,17 @@ func main() {
 	expressionsMap := make(chan map[int]orchestrator.Expression, 10)
 	tasks := make(chan orchestrator.Task, 30)
 
+	httpPort := getIntEnv("HTTP_PORT", 8000)
+	
+	gRPChost := getEnv("GRPC_HOST", "orchestrator")
+	gRPCport := getEnv("GRPC_PORT", "5000")
+
 	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap, config)
 	go handler.HandleExpressionsChanel(expressionsMap)
-
-	httpPort := 8000
 	go startHttpServer(httpPort, expressionInput)
-	
-	gRPChost := "orchestrator"
-	gRPCport := "5000"
 	go startGRPCServer(gRPChost, gRPCport, tasks)
 
 	log.Println("orchestrator successfully started")
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	wg.Wait()

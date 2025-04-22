@@ -10,7 +10,7 @@ import (
 	pb "github.com/child6yo/y-lms-discalc/agent/proto"
 )
 
-func Worker(g int, url string, grpcClient pb.OrchestratorServiceClient) {
+func Worker(g int, grpcClient pb.OrchestratorServiceClient) {
 	for {
 		resp, err := grpcClient.GetTask(context.TODO(), nil)
 		if err != nil {

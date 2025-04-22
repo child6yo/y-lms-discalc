@@ -39,9 +39,9 @@ func getIntEnv(key string, defaultValue int) int {
 }
 
 func main() {
-	host := "orchestrator"
-	port := "5000"
-	addr := fmt.Sprintf("%s:%s", host, port)
+	gRPChost := getEnv("GRPC_HOST", "orchestrator")
+	gRPCport := getEnv("GRPC_PORT", "5000")
+	addr := fmt.Sprintf("%s:%s", gRPChost, gRPCport)
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -53,8 +53,6 @@ func main() {
 
 	grpcClient := pb.NewOrchestratorServiceClient(conn)
 
-	var url = "http://orchestrator:8000/internal/task"
-
 	computingPower := getIntEnv("COMPUTING_POWER", 10)
 
 	var wg sync.WaitGroup
@@ -62,7 +60,7 @@ func main() {
 	for w := 1; w <= computingPower; w++ {
 		go func() {
 			defer wg.Done()
-			worker.Worker(w, url, grpcClient)
+			worker.Worker(w, grpcClient)
 		}()
 		time.Sleep(1 * time.Second)
 		wg.Add(1)
