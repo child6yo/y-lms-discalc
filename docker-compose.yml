@@ -22,7 +22,7 @@ services:
     depends_on:
       - orchestrator
     environment:
-      - COMPUTING_POWER=50
+      - COMPUTING_POWER=3
     networks:
       - app-network
 
