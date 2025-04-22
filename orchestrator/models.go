@@ -46,3 +46,9 @@ type Result struct {
 type ErrorModel struct {
 	Error string `json:"error"`
 }
+
+type User struct {
+	Id int
+	Login string
+	Password string
+}
