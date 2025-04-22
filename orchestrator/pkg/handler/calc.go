@@ -11,26 +11,26 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 )
 
-func CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
+func (h *Handler) CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req orchestrator.ExpressionInput
 
 		data, err := io.ReadAll(r.Body)
 		if err != nil || len(data) == 0 {
-			httpNewError(w, 500, "Internal server error")
+			httpNewError(w, 500, "Internal server error", err)
 			return
 		}
 		defer r.Body.Close()
 
 		err = json.Unmarshal(data, &req)
 		if err != nil {
-			httpNewError(w, 422, "Expression is not valid")
+			httpNewError(w, 422, "Expression is not valid", err)
 			return
 		}
 
 		expression, err := service.PostfixExpression(req.Expression)
 		if err != nil {
-			httpNewError(w, 422, "Expression is not valid")
+			httpNewError(w, 422, "Expression is not valid", err)
 			return
 		}
 		mu.Lock()
@@ -44,7 +44,7 @@ func CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
 		currentId++
 		responseData, err := json.MarshalIndent(response, "", " ")
 		if err != nil {
-			httpNewError(w, 500, "Internal server error")
+			httpNewError(w, 500, "Internal server error", err)
 			return
 		}
 
@@ -54,7 +54,7 @@ func CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
 	}
 }
 
-func GetExpressions(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetExpressions(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -67,7 +67,7 @@ func GetExpressions(w http.ResponseWriter, r *http.Request) {
 	response := orchestrator.ExpressionList{Expressions: expressions}
 	responseData, err := json.MarshalIndent(response, "", " ")
 	if err != nil {
-		httpNewError(w, 500, "Internal server error")
+		httpNewError(w, 500, "Internal server error", err)
 		return
 	}
 
@@ -75,30 +75,30 @@ func GetExpressions(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseData)
 }
 
-func GetExpressionById(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetExpressionById(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	re := regexp.MustCompile(`/api/v1/expressions/(\d+)`)
 	matches := re.FindStringSubmatch(path)
 
 	if len(matches) < 2 {
-		httpNewError(w, 500, "Internal server error")
+		httpNewError(w, 500, "Internal server error", nil)
 		return
 	}
 	id, err := strconv.Atoi(matches[1])
 	if err != nil {
-		httpNewError(w, 500, "Internal server error")
+		httpNewError(w, 500, "Internal server error", err)
 		return
 	}
 
 	if _, exists := exps[id]; !exists {
-		httpNewError(w, 404, "Invalid expression id")
+		httpNewError(w, 404, "Invalid expression id", nil)
 		return
 	}
 
 	responseData, err := json.MarshalIndent(exps[id], "", " ")
 	if err != nil {
-		httpNewError(w, 500, "Internal server error")
+		httpNewError(w, 500, "Internal server error", err)
 		return
 	}
 
