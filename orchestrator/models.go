@@ -39,9 +39,10 @@ type (
 	}
 
 	Result struct {
-		Id     string  `json:"id"`
-		Result float64 `json:"result"`
-		Error  string
+		Id         string  `json:"id"`
+		Result     float64 `json:"result"`
+		Expression string  `json:"expression"`
+		Error      string  `json:"error"`
 	}
 
 	ErrorModel struct {
@@ -49,8 +50,8 @@ type (
 	}
 
 	User struct {
-		Id       int    `json:"id"`
-		Login    string `json:"login"`
-		Password string `json:"password"`
+		Id       int    `json:"id" db:"id"`
+		Login    string `json:"login" db:"login"`
+		Password string `json:"password" db:"password"`
 	}
 )

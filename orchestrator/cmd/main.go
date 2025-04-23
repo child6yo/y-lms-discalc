@@ -45,21 +45,21 @@ func getIntEnv(key string, defaultValue int) int {
 }
 
 func startHttpServer(port int, expressionInput chan orchestrator.ExpAndId, handler *h.Handler) {
-	http.HandleFunc("/api/v1/calculate", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/v1/calculate", handler.AuthorizeMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handler.CulculateExpression(expressionInput)(w, r)
 		} else {
 			http.NotFound(w, r)
 		}
-	})
-	http.HandleFunc("/api/v1/expressions", func(w http.ResponseWriter, r *http.Request) {
+	}))
+	http.HandleFunc("/api/v1/expressions", handler.AuthorizeMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			handler.GetExpressions(w, r)
 		} else {
 			http.NotFound(w, r)
 		}
-	})
-	http.HandleFunc("/api/v1/expressions/", func(w http.ResponseWriter, r *http.Request) {
+	}))
+	http.HandleFunc("/api/v1/expressions/", handler.AuthorizeMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		pattern := `/api/v1/expressions/\d+`
 		matched, err := regexp.MatchString(pattern, r.URL.Path)
 		if err != nil || !matched {
@@ -71,10 +71,17 @@ func startHttpServer(port int, expressionInput chan orchestrator.ExpAndId, handl
 		} else {
 			http.NotFound(w, r)
 		}
-	})
+	}))
 	http.HandleFunc("/api/v1/register", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handler.CreateUser(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+	http.HandleFunc("/api/v1/login", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			handler.Auth(w, r)
 		} else {
 			http.NotFound(w, r)
 		}
