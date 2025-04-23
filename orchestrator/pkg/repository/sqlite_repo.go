@@ -12,7 +12,7 @@ const (
 	resultTable = "result"
 )
 
-func NewSqlightDb() (*sql.DB, error) {
+func NewSqlitetDb() (*sql.DB, error) {
 	ctx := context.TODO()
 
 	db, err := sql.Open("sqlite3", "database/discalc.db")
