@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 )
 
 func (h *Handler) CulculateExpression(input chan orchestrator.ExpAndId) http.HandlerFunc {
@@ -28,7 +27,7 @@ func (h *Handler) CulculateExpression(input chan orchestrator.ExpAndId) http.Han
 			return
 		}
 
-		expression, err := service.PostfixExpression(req.Expression)
+		expression, err := h.service.PostfixExpression(req.Expression)
 		if err != nil {
 			httpNewError(w, 422, "Expression is not valid", err)
 			return

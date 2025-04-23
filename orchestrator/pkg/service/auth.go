@@ -9,7 +9,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/repository"
 )
 
 const (
@@ -21,14 +20,6 @@ const (
 type tokenClaims struct {
 	UserId int `json:"user_id"`
 	jwt.RegisteredClaims
-}
-
-type Service struct {
-	repo *repository.Repository
-}
-
-func NewService(repository *repository.Repository) *Service {
-	return &Service{repo: repository}
 }
 
 func (s *Service) CreateUser(user orchestrator.User) (int, error) {
