@@ -12,9 +12,11 @@ import (
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/handler"
+	h "github.com/child6yo/y-lms-discalc/orchestrator/pkg/handler"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
+	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/repository"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/rpc"
+	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 	pb "github.com/child6yo/y-lms-discalc/orchestrator/proto"
 	"google.golang.org/grpc"
 )
@@ -42,7 +44,7 @@ func getIntEnv(key string, defaultValue int) int {
 	return value
 }
 
-func startHttpServer(port int, expressionInput chan orchestrator.ExpAndId) {
+func startHttpServer(port int, expressionInput chan orchestrator.ExpAndId, handler *h.Handler) {
 	http.HandleFunc("/api/v1/calculate", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handler.CulculateExpression(expressionInput)(w, r)
@@ -70,7 +72,13 @@ func startHttpServer(port int, expressionInput chan orchestrator.ExpAndId) {
 			http.NotFound(w, r)
 		}
 	})
-
+	http.HandleFunc("/api/v1/register", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			handler.CreateUser(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
 	http.HandleFunc("/", handler.StaticFileHandler)
 
 	httpPort := fmt.Sprint(":", port)
@@ -91,12 +99,12 @@ func startGRPCServer(host, port string, taskChan chan orchestrator.Task) {
 		log.Println("error starting tcp listener: ", err)
 		os.Exit(1)
 	}
-	
+
 	log.Println("tcp listener started at port: ", port)
 	grpcServer := grpc.NewServer()
 	taskServiceServer := rpc.NewServer(taskChan)
 	pb.RegisterOrchestratorServiceServer(grpcServer, taskServiceServer)
-	
+
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Println("error serving grpc: ", err)
 		os.Exit(1)
@@ -115,13 +123,22 @@ func main() {
 	tasks := make(chan orchestrator.Task, 30)
 
 	httpPort := getIntEnv("HTTP_PORT", 8000)
-	
+
 	gRPChost := getEnv("GRPC_HOST", "orchestrator")
 	gRPCport := getEnv("GRPC_PORT", "5000")
 
+	repository, err := repository.NewRepository()
+	if err != nil {
+		log.Println("failed to connect sqlight: ", err)
+		os.Exit(1)
+	}
+	defer repository.Db.Close()
+	service := service.NewService(repository)
+	handler := h.NewHandler(service)
+
 	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap, config)
-	go handler.HandleExpressionsChanel(expressionsMap)
-	go startHttpServer(httpPort, expressionInput)
+	go h.HandleExpressionsChanel(expressionsMap)
+	go startHttpServer(httpPort, expressionInput, handler)
 	go startGRPCServer(gRPChost, gRPCport, tasks)
 
 	log.Println("orchestrator successfully started")

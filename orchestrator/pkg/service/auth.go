@@ -24,7 +24,11 @@ type tokenClaims struct {
 }
 
 type Service struct {
-	repo repository.Repository
+	repo *repository.Repository
+}
+
+func NewService(repository *repository.Repository) *Service {
+	return &Service{repo: repository}
 }
 
 func (s *Service) CreateUser(user orchestrator.User) (int, error) {
