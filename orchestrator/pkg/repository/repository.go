@@ -7,7 +7,7 @@ type Repository struct {
 }
 
 func NewRepository() (*Repository, error) {
-	db, err := NewSqlightDb()
+	db, err := NewSqliteDb()
 	if err != nil {
 		return nil, err
 	}
