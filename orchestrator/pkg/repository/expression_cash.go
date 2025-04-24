@@ -4,10 +4,10 @@ import "github.com/child6yo/y-lms-discalc/orchestrator"
 
 type ExpressionCache struct {
 	expression string
-	result     *orchestrator.Result
+	result     *orchestrator.Expression
 }
 
-func (r *Repository) CacheResult(result *orchestrator.Result) {
+func (r *Repository) CacheResult(result *orchestrator.Expression) {
 	r.Cache.mutex.Lock()
 	defer r.Cache.mutex.Unlock()
 
@@ -29,7 +29,7 @@ func (r *Repository) CacheResult(result *orchestrator.Result) {
 	}
 }
 
-func (r *Repository) GetCachedResult(expression string) (*orchestrator.Result, bool) {
+func (r *Repository) GetCachedResult(expression string) (*orchestrator.Expression, bool) {
 	r.Cache.mutex.Lock()
 	defer r.Cache.mutex.Unlock()
 

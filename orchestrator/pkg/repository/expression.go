@@ -7,7 +7,7 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-func (r *Repository) AddExpression(userId int, expression *orchestrator.Result) (int, error) {
+func (r *Repository) AddExpression(userId int, expression *orchestrator.Expression) (int, error) {
 	query := fmt.Sprintf("INSERT INTO %s (user_id, exp, result, status) values ($1, $2, $3, $4)", expressionTable)
 
 	res, err := r.Db.Exec(query, userId, expression.Expression, expression.Result, expression.Status)
@@ -22,7 +22,7 @@ func (r *Repository) AddExpression(userId int, expression *orchestrator.Result) 
 	return int(expId), nil
 }
 
-func (r *Repository) UpdateExpression(expression *orchestrator.Result) error {
+func (r *Repository) UpdateExpression(expression *orchestrator.Expression) error {
 	id, err := strconv.Atoi(expression.Id)
 	if err != nil {
 		return err
@@ -36,8 +36,8 @@ func (r *Repository) UpdateExpression(expression *orchestrator.Result) error {
 	return nil
 }
 
-func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Result, error) {
-	var result orchestrator.Result
+func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Expression, error) {
+	var result orchestrator.Expression
 
 	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1 AND id=$2", expressionTable)
 
@@ -50,8 +50,8 @@ func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Result,
 	return &result, nil
 }
 
-func (r *Repository) GetExpressions(userId int) (*[]orchestrator.Result, error) {
-	var result []orchestrator.Result
+func (r *Repository) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
+	var result []orchestrator.Expression
 
 	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1", expressionTable)
 	rows, err := r.Db.Query(query, userId)
@@ -61,7 +61,7 @@ func (r *Repository) GetExpressions(userId int) (*[]orchestrator.Result, error) 
 	defer rows.Close()
 
 	for rows.Next() {
-		r := orchestrator.Result{}
+		r := orchestrator.Expression{}
 		err := rows.Scan(&r.Id, &r.Result, &r.Expression, &r.Status)
 		if err != nil {
 			return nil, err

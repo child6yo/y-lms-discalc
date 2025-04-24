@@ -16,7 +16,7 @@ var (
 	globalTaskCounter  uint64
 )
 
-func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
+func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator.Task,
 	config map[string]time.Duration, service *service.Service) {
 	var stack []float64
 	taskCounter := 0
@@ -32,7 +32,7 @@ func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
 			stack = append(stack, value)
 		} else {
 			if len(stack) < 2 {
-				expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+				expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
 				err := service.UpdateExpression(&expession)
 				if err != nil {
 					log.Println("Something went wrong in processor 1: ", err)
@@ -45,7 +45,7 @@ func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
 			operandA := stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
 
-			resultChan := make(chan orchestrator.Result, 1)
+			resultChan := make(chan orchestrator.Expression, 1)
 
 			localTaskCounter := atomic.AddUint64(&globalTaskCounter, 1)
 			key := strconv.FormatUint(localTaskCounter, 10)
@@ -59,13 +59,13 @@ func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
 				OperationTime: config[token],
 			}
 
-			taskChan <- task
+			*taskChan <- &task
 
 			select {
 			case res := <-resultChan:
 				TaskResultChannels.Delete(taskCounter)
 				if res.Status != "" {
-					expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+					expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
 					err := service.UpdateExpression(&expession)
 					if err != nil {
 						log.Println("Something went wrong in processor 2: ", err)
@@ -77,7 +77,7 @@ func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
 				stack = append(stack, res.Result)
 			case <-time.After(task.OperationTime + 1*time.Second):
 				TaskResultChannels.Delete(taskCounter)
-				expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+				expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
 				err := service.UpdateExpression(&expession)
 				if err != nil {
 					log.Println("Something went wrong in processor 3: ", err)
@@ -89,7 +89,7 @@ func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
 	}
 
 	if len(stack) != 1 {
-		expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+		expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
 		err := service.UpdateExpression(&expession)
 		if err != nil {
 			log.Println("Something went wrong in processor 4: ", err)
@@ -98,7 +98,7 @@ func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
 		return
 	}
 	finalResult := stack[0]
-	expession := orchestrator.Result{Id: exp.Id, Expression: exp.Expression, Status: "Success", Result: finalResult}
+	expession := orchestrator.Expression{Id: exp.Id, Expression: exp.Expression, Status: "Success", Result: finalResult}
 	err = service.UpdateExpression(&expession)
 	if err != nil {
 		log.Println("Something went wrong in processor 5: ", err)
@@ -106,7 +106,7 @@ func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
 	log.Printf("Expression %s computed successfully, result: %v\n", exp.Id, finalResult)
 }
 
-func StartExpressionProcessor(input *chan *orchestrator.Result, taskChan chan orchestrator.Task,
+func StartExpressionProcessor(input *chan *orchestrator.Expression, taskChan *chan *orchestrator.Task,
 	config map[string]time.Duration, service *service.Service) {
 	for exp := range *input {
 		go processExpression(*exp, taskChan, config, service)

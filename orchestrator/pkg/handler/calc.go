@@ -65,7 +65,7 @@ func (h *Handler) GetExpressions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := orchestrator.ExpressionList{Expressions: *result}
+	response := orchestrator.ExpressionListOutput{Expressions: *result}
 	responseData, err := json.MarshalIndent(response, "", " ")
 	if err != nil {
 		httpNewError(w, 500, "Internal server error", err)

@@ -9,7 +9,7 @@ import (
 func (s *Service) CulculateExpression(userId int, expression string) (int, error) {
 	cachedExp, exists := s.repo.GetCachedResult(expression)
 	if !exists {
-		expEntity := orchestrator.Result{Expression: expression, Status: "Calculating..."}
+		expEntity := orchestrator.Expression{Expression: expression, Status: "Calculating..."}
 		expId, err := s.repo.AddExpression(userId, &expEntity)
 		if err != nil {
 			return 0, err
@@ -27,7 +27,7 @@ func (s *Service) CulculateExpression(userId int, expression string) (int, error
 	return expId, nil
 }
 
-func (s *Service) UpdateExpression(result *orchestrator.Result) error {
+func (s *Service) UpdateExpression(result *orchestrator.Expression) error {
 	if result.Status != "ERROR" {
 		s.repo.CacheResult(result)
 	}
@@ -35,10 +35,10 @@ func (s *Service) UpdateExpression(result *orchestrator.Result) error {
 	return s.repo.UpdateExpression(result)
 }
 
-func (s *Service) GetExpressioById(userId, expId int) (*orchestrator.Result, error) {
+func (s *Service) GetExpressioById(userId, expId int) (*orchestrator.Expression, error) {
 	return s.repo.GetExpressionById(expId, userId)
 }
 
-func (s *Service) GetExpressions(userId int) (*[]orchestrator.Result, error) {
+func (s *Service) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
 	return s.repo.GetExpressions(userId)
 }

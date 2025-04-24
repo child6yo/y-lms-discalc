@@ -7,9 +7,9 @@ import (
 
 type Service struct {
 	repo *repository.Repository
-	expChannel *chan *orchestrator.Result
+	expChannel *chan *orchestrator.Expression
 }
 
-func NewService(repository *repository.Repository, expChannel *chan *orchestrator.Result) *Service {
+func NewService(repository *repository.Repository, expChannel *chan *orchestrator.Expression) *Service {
 	return &Service{repo: repository, expChannel: expChannel}
 }

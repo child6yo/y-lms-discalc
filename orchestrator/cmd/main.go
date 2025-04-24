@@ -98,7 +98,7 @@ func startHttpServer(port int, handler *h.Handler) {
 	}
 }
 
-func startGRPCServer(host, port string, taskChan chan orchestrator.Task) {
+func startGRPCServer(host, port string, taskChan *chan *orchestrator.Task) {
 	addr := fmt.Sprintf("%s:%s", host, port)
 	lis, err := net.Listen("tcp", addr)
 
@@ -125,8 +125,8 @@ func main() {
 	config["*"] = time.Duration(getIntEnv("TIME_MULTIPLICATIONS_MS", 100) * int(time.Millisecond))
 	config["/"] = time.Duration(getIntEnv("TIME_DIVISIONS_MS", 100) * int(time.Millisecond))
 
-	expressionInput := make(chan *orchestrator.Result, 10)
-	tasks := make(chan orchestrator.Task, 30)
+	expressionInput := make(chan *orchestrator.Expression, 30)
+	tasks := make(chan *orchestrator.Task, 30)
 
 	httpPort := getIntEnv("HTTP_PORT", 8000)
 
@@ -142,9 +142,9 @@ func main() {
 	service := service.NewService(repository, &expressionInput)
 	handler := h.NewHandler(service)
 
-	go processor.StartExpressionProcessor(&expressionInput, tasks, config, service)
+	go processor.StartExpressionProcessor(&expressionInput, &tasks, config, service)
 	go startHttpServer(httpPort, handler)
-	go startGRPCServer(gRPChost, gRPCport, tasks)
+	go startGRPCServer(gRPChost, gRPCport, &tasks)
 
 	log.Println("orchestrator successfully started")
 	var wg sync.WaitGroup

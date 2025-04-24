@@ -12,10 +12,10 @@ import (
 
 type Server struct {
 	pb.OrchestratorServiceServer
-	taskChan chan orchestrator.Task
+	taskChan *chan *orchestrator.Task
 }
 
-func NewServer(taskChan chan orchestrator.Task) *Server {
+func NewServer(taskChan *chan *orchestrator.Task) *Server {
 	return &Server{taskChan: taskChan}
 }
 
@@ -27,7 +27,7 @@ type OrchestratorServiceServer interface {
 
 func (s *Server) GetTask(ctx context.Context, _ *pb.Empty) (*pb.TaskRequest, error) {
 	select {
-	case task := <-s.taskChan:
+	case task := <- *s.taskChan:
 		return &pb.TaskRequest{Id: task.Id,
 			Arg1:          float32(task.Arg1),
 			Arg2:          float32(task.Arg2),
@@ -44,12 +44,12 @@ func (s *Server) TakeResult(ctx context.Context, result *pb.ResultResponse) (*pb
 		return nil, errors.New("task not found or already processed")
 	}
 
-	resultChan, ok := chInterface.(chan orchestrator.Result)
+	resultChan, ok := chInterface.(chan orchestrator.Expression)
 	if !ok {
 		return nil, errors.New("something went wrong")
 	}
 
-	res := orchestrator.Result{Id: result.Id, Result: float64(result.Result), Status: result.Error}
+	res := orchestrator.Expression{Id: result.Id, Result: float64(result.Result), Status: result.Error}
 	resultChan <- res
 
 	return nil, nil
