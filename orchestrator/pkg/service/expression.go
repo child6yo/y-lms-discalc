@@ -35,10 +35,10 @@ func (s *Service) UpdateExpression(result *orchestrator.Result) error {
 	return s.repo.UpdateExpression(result)
 }
 
-func (s *Service) GetExpressioById() {
-
+func (s *Service) GetExpressioById(userId, expId int) (*orchestrator.Result, error) {
+	return s.repo.GetExpressionById(expId, userId)
 }
 
-func (s *Service) GetExpressions() {
-
+func (s *Service) GetExpressions(userId int) (*[]orchestrator.Result, error) {
+	return s.repo.GetExpressions(userId)
 }

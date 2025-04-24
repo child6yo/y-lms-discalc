@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
@@ -51,53 +53,63 @@ func (h *Handler) CulculateExpression() http.HandlerFunc {
 }
 
 func (h *Handler) GetExpressions(w http.ResponseWriter, r *http.Request) {
-	// mu.Lock()
-	// defer mu.Unlock()
+	userId, err := getUserId(r)
+	if err != nil {
+		httpNewError(w, 401, "JWT is not valid", err)
+		return
+	}
 
-	// expressions := make([]orchestrator.Expression, 0, len(exps))
+	result, err := h.service.GetExpressions(userId)
+	if err != nil {
+		httpNewError(w, 500, "Internal server error", err)
+		return
+	}
 
-	// for _, value := range exps {
-	// 	expressions = append(expressions, value)
-	// }
-
-	// response := orchestrator.ExpressionList{Expressions: expressions}
-	// responseData, err := json.MarshalIndent(response, "", " ")
-	// if err != nil {
-	// 	httpNewError(w, 500, "Internal server error", err)
-	// 	return
-	// }
+	response := orchestrator.ExpressionList{Expressions: *result}
+	responseData, err := json.MarshalIndent(response, "", " ")
+	if err != nil {
+		httpNewError(w, 500, "Internal server error", err)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte{})
+	w.Write(responseData)
 }
 
 func (h *Handler) GetExpressionById(w http.ResponseWriter, r *http.Request) {
-	// path := r.URL.Path
+	path := r.URL.Path
 
-	// re := regexp.MustCompile(`/api/v1/expressions/(\d+)`)
-	// matches := re.FindStringSubmatch(path)
+	re := regexp.MustCompile(`/api/v1/expressions/(\d+)`)
+	matches := re.FindStringSubmatch(path)
 
-	// if len(matches) < 2 {
-	// 	httpNewError(w, 500, "Internal server error", nil)
-	// 	return
-	// }
-	// id, err := strconv.Atoi(matches[1])
-	// if err != nil {
-	// 	httpNewError(w, 500, "Internal server error", err)
-	// 	return
-	// }
+	if len(matches) < 2 {
+		httpNewError(w, 500, "Internal server error", nil)
+		return
+	}
+	expId, err := strconv.Atoi(matches[1])
+	if err != nil {
+		httpNewError(w, 500, "Internal server error", err)
+		return
+	}
 
-	// if _, exists := exps[id]; !exists {
-	// 	httpNewError(w, 404, "Invalid expression id", nil)
-	// 	return
-	// }
+	userId, err := getUserId(r)
+	if err != nil {
+		httpNewError(w, 401, "JWT is not valid", err)
+		return
+	}
 
-	// responseData, err := json.MarshalIndent(exps[id], "", " ")
-	// if err != nil {
-	// 	httpNewError(w, 500, "Internal server error", err)
-	// 	return
-	// }
+	result, err := h.service.GetExpressioById(userId, expId)
+	if err != nil {
+		httpNewError(w, 500, "Internal server error", err)
+		return
+	}
+
+	responseData, err := json.MarshalIndent(result, "", " ")
+	if err != nil {
+		httpNewError(w, 500, "Internal server error", err)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte{})
+	w.Write(responseData)
 }

@@ -35,3 +35,39 @@ func (r *Repository) UpdateExpression(expression *orchestrator.Result) error {
 	}
 	return nil
 }
+
+func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Result, error) {
+	var result orchestrator.Result
+
+	query := fmt.Sprintf("SELECT * FROM %s WHERE user_id=$1 AND id=$2", expressionTable)
+
+	row := r.Db.QueryRow(query, userId, expId)
+	err := row.Scan(&result.Id, &result.Result, &result.Expression, &result.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func (r *Repository) GetExpressions(userId int) (*[]orchestrator.Result, error) {
+	var result []orchestrator.Result
+
+	query := fmt.Sprintf("SELECT * FROM %s WHERE user_id=$1", expressionTable)
+	rows, err := r.Db.Query(query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		r := orchestrator.Result{}
+		err := rows.Scan(&r.Id, &r.Result, &r.Expression, &r.Status)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, r)
+	}
+
+	return &result, nil
+}
