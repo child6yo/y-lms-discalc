@@ -1,14 +1,19 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
+
+type UserID string
+
+var userID UserID
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user orchestrator.User
@@ -113,22 +118,15 @@ func (h *Handler) AuthorizeMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Add("UserID", strconv.Itoa(userId))
-
-		next(w, r)
+		ctx := context.WithValue(r.Context(), userID, userId)
+		next(w, r.WithContext(ctx))
 	}
 }
 
-// func getUserId(r *http.Request) (int, error) {
-// 	id := r.Header.Get("UserID")
-// 	if id == "" {
-// 		return 0, errors.New("unknown jwt")
-// 	}
-
-// 	idInt, err := strconv.Atoi(id)
-// 	if err != nil {
-// 		return 0, errors.New("unknown jwt")
-// 	}
-
-// 	return idInt, nil
-// }
+func getUserId(r *http.Request) (int, error) {
+	userId := r.Context().Value(userID)
+	if userId == nil {
+		return 0, errors.New("user ID not found")
+	}
+	return userId.(int), nil
+}

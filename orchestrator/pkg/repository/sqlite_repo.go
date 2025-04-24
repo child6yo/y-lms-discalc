@@ -9,10 +9,10 @@ import (
 
 const (
 	userTable = "user"
-	resultTable = "result"
+	expressionTable = "expression"
 )
 
-func NewSqliteDb() (*sql.DB, error) {
+func newSqliteDb() (*sql.DB, error) {
 	ctx := context.TODO()
 
 	db, err := sql.Open("sqlite3", "database/discalc.db")
@@ -38,18 +38,19 @@ func initDatabase(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS user(
 		id INTEGER PRIMARY KEY AUTOINCREMENT, 
 		login TEXT NOT NULL UNIQUE,
-		password TEXT
+		password TEXT NOT NULL
 	);`
 	if _, err := db.Exec(user); err != nil {
 		return err
 	}
 
 	result := `
-	CREATE TABLE IF NOT EXISTS result(
+	CREATE TABLE IF NOT EXISTS expression(
 		id INTEGER PRIMARY KEY AUTOINCREMENT, 
 		user_id INTEGER NOT NULL,
-		expression TEXT NOT NULL,
-		equal REAL NOT NULL,
+		exp TEXT NOT NULL,
+		result REAL,
+		status TEXT NOT NULL,
 	
 		FOREIGN KEY (user_id) REFERENCES user (id)
 	);`

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
+	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 )
 
 var (
@@ -15,19 +16,28 @@ var (
 	globalTaskCounter  uint64
 )
 
-func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Task, output chan map[int]orchestrator.Expression, config map[string]time.Duration) {
+func processExpression(exp orchestrator.Result, taskChan chan orchestrator.Task,
+	config map[string]time.Duration, service *service.Service) {
 	var stack []float64
 	taskCounter := 0
-	m := make(map[int]orchestrator.Expression)
 
-	for _, token := range exp.Expression {
+	expr, err := service.PostfixExpression(exp.Expression)
+	if err != nil {
+		log.Println("Something went wrong in processor: ", err, expr)
+		return
+	}
+
+	for _, token := range expr {
 		if value, err := strconv.ParseFloat(token, 64); err == nil {
 			stack = append(stack, value)
 		} else {
 			if len(stack) < 2 {
-				m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
-				output <- m
-				log.Printf("Expression %d: insufficient operands for operator %s\n", exp.Id, token)
+				expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+				err := service.UpdateExpression(&expession)
+				if err != nil {
+					log.Println("Something went wrong in processor 1: ", err)
+				}
+				log.Printf("Expression %s: insufficient operands for operator %s\n", exp.Id, token)
 				return
 			}
 
@@ -54,39 +64,51 @@ func processExpression(exp orchestrator.ExpAndId, taskChan chan orchestrator.Tas
 			select {
 			case res := <-resultChan:
 				TaskResultChannels.Delete(taskCounter)
-				if res.Error != "" {
-					m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
-					output <- m
-					log.Printf("Expression %d, task %s error: %v\n", exp.Id, task.Id, res.Error)
+				if res.Status != "" {
+					expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+					err := service.UpdateExpression(&expession)
+					if err != nil {
+						log.Println("Something went wrong in processor 2: ", err)
+					}
+					log.Printf("Expression %s, task %s error: %v\n", exp.Id, task.Id, res.Status)
 					return
 				}
 
 				stack = append(stack, res.Result)
 			case <-time.After(task.OperationTime + 1*time.Second):
 				TaskResultChannels.Delete(taskCounter)
-				m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
-				output <- m
-				log.Printf("Expression %d, task %s timeout\n", exp.Id, task.Id)
+				expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+				err := service.UpdateExpression(&expession)
+				if err != nil {
+					log.Println("Something went wrong in processor 3: ", err)
+				}
+				log.Printf("Expression %s, task %s timeout\n", exp.Id, task.Id)
 				return
 			}
 		}
 	}
 
 	if len(stack) != 1 {
-		m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "ERROR", Result: 0}
-		output <- m
-		log.Printf("Expression %d: invalid RPN, stack: %v\n", exp.Id, stack)
+		expession := orchestrator.Result{Id: exp.Id, Result: 0, Status: "ERROR"}
+		err := service.UpdateExpression(&expession)
+		if err != nil {
+			log.Println("Something went wrong in processor 4: ", err)
+		}
+		log.Printf("Expression %s: invalid RPN, stack: %v\n", exp.Id, stack)
 		return
 	}
 	finalResult := stack[0]
-	m[exp.Id] = orchestrator.Expression{Id: exp.Id, Status: "Success", Result: finalResult}
-	output <- m
-	log.Printf("Expression %d computed successfully, result: %v\n", exp.Id, finalResult)
+	expession := orchestrator.Result{Id: exp.Id, Expression: exp.Expression, Status: "Success", Result: finalResult}
+	err = service.UpdateExpression(&expession)
+	if err != nil {
+		log.Println("Something went wrong in processor 5: ", err)
+	}
+	log.Printf("Expression %s computed successfully, result: %v\n", exp.Id, finalResult)
 }
 
-func StartExpressionProcessor(input chan orchestrator.ExpAndId, taskChan chan orchestrator.Task,
-	output chan map[int]orchestrator.Expression, config map[string]time.Duration) {
-	for exp := range input {
-		go processExpression(exp, taskChan, output, config)
+func StartExpressionProcessor(input *chan *orchestrator.Result, taskChan chan orchestrator.Task,
+	config map[string]time.Duration, service *service.Service) {
+	for exp := range *input {
+		go processExpression(*exp, taskChan, config, service)
 	}
 }

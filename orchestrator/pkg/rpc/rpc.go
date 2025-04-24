@@ -49,7 +49,7 @@ func (s *Server) TakeResult(ctx context.Context, result *pb.ResultResponse) (*pb
 		return nil, errors.New("something went wrong")
 	}
 
-	res := orchestrator.Result{Id: result.Id, Result: float64(result.Result), Error: result.Error}
+	res := orchestrator.Result{Id: result.Id, Result: float64(result.Result), Status: result.Error}
 	resultChan <- res
 
 	return nil, nil

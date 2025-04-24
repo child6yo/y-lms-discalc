@@ -1,15 +1,19 @@
 package repository
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type Repository struct {
 	Db *sql.DB
+	Cache *Cache
 }
 
-func NewRepository() (*Repository, error) {
-	db, err := NewSqliteDb()
+func NewRepository(cacheCap int) (*Repository, error) {
+	db, err := newSqliteDb()
 	if err != nil {
 		return nil, err
 	}
-	return &Repository{Db: db}, nil
+	cache := newCache(cacheCap)
+	return &Repository{Db: db, Cache: cache}, nil
 }

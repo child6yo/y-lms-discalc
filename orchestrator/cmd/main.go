@@ -44,10 +44,10 @@ func getIntEnv(key string, defaultValue int) int {
 	return value
 }
 
-func startHttpServer(port int, expressionInput chan orchestrator.ExpAndId, handler *h.Handler) {
+func startHttpServer(port int, handler *h.Handler) {
 	http.HandleFunc("/api/v1/calculate", handler.AuthorizeMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			handler.CulculateExpression(expressionInput)(w, r)
+			handler.CulculateExpression()(w, r)
 		} else {
 			http.NotFound(w, r)
 		}
@@ -125,8 +125,7 @@ func main() {
 	config["*"] = time.Duration(getIntEnv("TIME_MULTIPLICATIONS_MS", 100) * int(time.Millisecond))
 	config["/"] = time.Duration(getIntEnv("TIME_DIVISIONS_MS", 100) * int(time.Millisecond))
 
-	expressionInput := make(chan orchestrator.ExpAndId, 10)
-	expressionsMap := make(chan map[int]orchestrator.Expression, 10)
+	expressionInput := make(chan *orchestrator.Result, 10)
 	tasks := make(chan orchestrator.Task, 30)
 
 	httpPort := getIntEnv("HTTP_PORT", 8000)
@@ -134,18 +133,17 @@ func main() {
 	gRPChost := getEnv("GRPC_HOST", "orchestrator")
 	gRPCport := getEnv("GRPC_PORT", "5000")
 
-	repository, err := repository.NewRepository()
+	repository, err := repository.NewRepository(100)
 	if err != nil {
 		log.Println("failed to connect sqlight: ", err)
 		os.Exit(1)
 	}
 	defer repository.Db.Close()
-	service := service.NewService(repository)
+	service := service.NewService(repository, &expressionInput)
 	handler := h.NewHandler(service)
 
-	go processor.StartExpressionProcessor(expressionInput, tasks, expressionsMap, config)
-	go h.HandleExpressionsChanel(expressionsMap)
-	go startHttpServer(httpPort, expressionInput, handler)
+	go processor.StartExpressionProcessor(&expressionInput, tasks, config, service)
+	go startHttpServer(httpPort, handler)
 	go startGRPCServer(gRPChost, gRPCport, tasks)
 
 	log.Println("orchestrator successfully started")
