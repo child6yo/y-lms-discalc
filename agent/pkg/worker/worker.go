@@ -14,7 +14,6 @@ func Worker(g int, grpcClient pb.OrchestratorServiceClient) {
 	for {
 		resp, err := grpcClient.GetTask(context.TODO(), nil)
 		if err != nil {
-			log.Println("error: ", err)
 			continue
 		}
 
@@ -45,6 +44,7 @@ func Worker(g int, grpcClient pb.OrchestratorServiceClient) {
 				log.Println("Post result error:", err)
 				continue
 			}
+			log.Printf("Task %s successfully done", task.Id)
 		case <-ctx.Done():
 			log.Printf("Worker %d: Task %s exceeded time limit of %d seconds", g, task.Id, task.OperationTime)
 			continue
