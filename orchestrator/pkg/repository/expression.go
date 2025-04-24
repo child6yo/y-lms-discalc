@@ -39,7 +39,7 @@ func (r *Repository) UpdateExpression(expression *orchestrator.Result) error {
 func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Result, error) {
 	var result orchestrator.Result
 
-	query := fmt.Sprintf("SELECT * FROM %s WHERE user_id=$1 AND id=$2", expressionTable)
+	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1 AND id=$2", expressionTable)
 
 	row := r.Db.QueryRow(query, userId, expId)
 	err := row.Scan(&result.Id, &result.Result, &result.Expression, &result.Status)
@@ -53,7 +53,7 @@ func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Result,
 func (r *Repository) GetExpressions(userId int) (*[]orchestrator.Result, error) {
 	var result []orchestrator.Result
 
-	query := fmt.Sprintf("SELECT * FROM %s WHERE user_id=$1", expressionTable)
+	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1", expressionTable)
 	rows, err := r.Db.Query(query, userId)
 	if err != nil {
 		return nil, err
