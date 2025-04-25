@@ -6,7 +6,7 @@ import (
 	"unicode"
 )
 
-func (s *Service) PostfixExpression(expression string) ([]string, error) {
+func (s *MainService) PostfixExpression(expression string) ([]string, error) {
 	tokens, err := tokenize(expression)
 	if err != nil {
 		return nil, err

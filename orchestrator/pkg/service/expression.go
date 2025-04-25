@@ -6,7 +6,7 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-func (s *Service) CulculateExpression(userId int, expression string) (int, error) {
+func (s *MainService) CulculateExpression(userId int, expression string) (int, error) {
 	cachedExp, exists := s.repo.GetCachedResult(expression)
 	if !exists {
 		expEntity := orchestrator.Expression{Expression: expression, Status: "Calculating..."}
@@ -27,7 +27,7 @@ func (s *Service) CulculateExpression(userId int, expression string) (int, error
 	return expId, nil
 }
 
-func (s *Service) UpdateExpression(result *orchestrator.Expression) error {
+func (s *MainService) UpdateExpression(result *orchestrator.Expression) error {
 	if result.Status != "ERROR" {
 		s.repo.CacheResult(result)
 	}
@@ -35,10 +35,10 @@ func (s *Service) UpdateExpression(result *orchestrator.Expression) error {
 	return s.repo.UpdateExpression(result)
 }
 
-func (s *Service) GetExpressioById(userId, expId int) (*orchestrator.Expression, error) {
+func (s *MainService) GetExpressioById(userId, expId int) (*orchestrator.Expression, error) {
 	return s.repo.GetExpressionById(expId, userId)
 }
 
-func (s *Service) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
+func (s *MainService) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
 	return s.repo.GetExpressions(userId)
 }

@@ -22,13 +22,13 @@ type tokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (s *Service) CreateUser(user orchestrator.User) (int, error) {
+func (s *MainService) CreateUser(user orchestrator.User) (int, error) {
 	user.Password = generatePasswordHash(user.Password)
 
 	return s.repo.CreateUser(user)
 }
 
-func (s *Service) GenerateToken(username, password string) (string, error) {
+func (s *MainService) GenerateToken(username, password string) (string, error) {
 	user, err := s.repo.GetUser(username, generatePasswordHash(password))
 	if err != nil {
 		return "", err
@@ -46,7 +46,7 @@ func (s *Service) GenerateToken(username, password string) (string, error) {
 	return token.SignedString([]byte(signingKey))
 }
 
-func (s *Service) ParseToken(accessToken string) (int, error) {
+func (s *MainService) ParseToken(accessToken string) (int, error) {
 	token, err := jwt.ParseWithClaims(accessToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")

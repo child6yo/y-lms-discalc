@@ -17,7 +17,7 @@ var (
 )
 
 func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator.Task,
-	config map[string]time.Duration, service *service.Service) {
+	config map[string]time.Duration, service service.Service) {
 	var stack []float64
 	taskCounter := 0
 
@@ -107,7 +107,7 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 }
 
 func StartExpressionProcessor(input *chan *orchestrator.Expression, taskChan *chan *orchestrator.Task,
-	config map[string]time.Duration, service *service.Service) {
+	config map[string]time.Duration, service service.Service) {
 	for exp := range *input {
 		go processExpression(*exp, taskChan, config, service)
 	}
