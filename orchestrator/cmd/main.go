@@ -47,7 +47,7 @@ func getIntEnv(key string, defaultValue int) int {
 func startHttpServer(port int, handler *h.Handler) {
 	http.HandleFunc("/api/v1/calculate", handler.AuthorizeMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			handler.CulculateExpression()(w, r)
+			handler.CulculateExpression(w, r)
 		} else {
 			http.NotFound(w, r)
 		}
