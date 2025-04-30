@@ -17,13 +17,14 @@ var (
 )
 
 func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator.Task,
-	config map[string]time.Duration, service service.Service) {
+	config map[string]time.Duration, service service.Service, debug chan orchestrator.Expression) {
 	var stack []float64
 	taskCounter := 0
 
 	expr, err := service.PostfixExpression(exp.Expression)
 	if err != nil {
 		log.Println("Something went wrong in processor: ", err, expr)
+		debug <- orchestrator.Expression{}
 		return
 	}
 
@@ -38,6 +39,7 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 					log.Println("Something went wrong in processor 1: ", err)
 				}
 				log.Printf("Expression %s: insufficient operands for operator %s\n", exp.Id, token)
+				debug <- expession
 				return
 			}
 
@@ -71,6 +73,7 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 						log.Println("Something went wrong in processor 2: ", err)
 					}
 					log.Printf("Expression %s, task %s error: %v\n", exp.Id, task.Id, res.Status)
+					debug <- expession
 					return
 				}
 
@@ -83,6 +86,7 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 					log.Println("Something went wrong in processor 3: ", err)
 				}
 				log.Printf("Expression %s, task %s timeout\n", exp.Id, task.Id)
+				debug <- expession
 				return
 			}
 		}
@@ -95,6 +99,7 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 			log.Println("Something went wrong in processor 4: ", err)
 		}
 		log.Printf("Expression %s: invalid RPN, stack: %v\n", exp.Id, stack)
+		debug <- expession
 		return
 	}
 	finalResult := stack[0]
@@ -102,13 +107,15 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 	err = service.UpdateExpression(&expession)
 	if err != nil {
 		log.Println("Something went wrong in processor 5: ", err)
+		debug <- expession
 	}
 	log.Printf("Expression %s computed successfully, result: %v\n", exp.Id, finalResult)
+	debug <- expession
 }
 
 func StartExpressionProcessor(input *chan *orchestrator.Expression, taskChan *chan *orchestrator.Task,
 	config map[string]time.Duration, service service.Service) {
 	for exp := range *input {
-		go processExpression(*exp, taskChan, config, service)
+		go processExpression(*exp, taskChan, config, service, nil)
 	}
 }
