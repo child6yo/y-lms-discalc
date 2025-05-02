@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/child6yo/y-lms-discalc/agent/pkg/service"
 	"github.com/child6yo/y-lms-discalc/agent/pkg/worker"
 
 	pb "github.com/child6yo/y-lms-discalc/agent/proto"
@@ -54,13 +55,14 @@ func main() {
 	grpcClient := pb.NewOrchestratorServiceClient(conn)
 
 	computingPower := getIntEnv("COMPUTING_POWER", 10)
+	evaluator := service.NewPostfixEvaluator()
 
 	var wg sync.WaitGroup
 
 	for w := 1; w <= computingPower; w++ {
 		go func() {
 			defer wg.Done()
-			worker.Worker(w, grpcClient)
+			worker.Worker(w, grpcClient, evaluator)
 		}()
 		time.Sleep(1 * time.Second)
 		wg.Add(1)

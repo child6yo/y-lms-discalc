@@ -7,6 +7,8 @@ import (
 )
 
 func TestEvaluatePostfix(t *testing.T) {
+	p := PostfixEvaluator{}
+
 	tests := []struct {
 		name           string
 		task           agent.Task
@@ -70,7 +72,7 @@ func TestEvaluatePostfix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := EvaluatePostfix(tt.task)
+			result := p.EvaluatePostfix(tt.task)
 
 			if result != tt.expectedResult {
 				t.Errorf("For task %+v, expected result %+v, got %+v", tt.task, tt.expectedResult, result)

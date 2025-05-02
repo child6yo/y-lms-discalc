@@ -4,7 +4,17 @@ import (
 	"github.com/child6yo/y-lms-discalc/agent"
 )
 
-func EvaluatePostfix(task agent.Task) agent.Result {
+type Evaluator interface {
+	EvaluatePostfix(task agent.Task) agent.Result
+}
+
+type PostfixEvaluator struct{}
+
+func NewPostfixEvaluator() *PostfixEvaluator {
+	return &PostfixEvaluator{}
+}
+
+func (p *PostfixEvaluator) EvaluatePostfix(task agent.Task) agent.Result {
 	var res float64
 
 	switch task.Operation {

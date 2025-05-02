@@ -10,7 +10,7 @@ import (
 	pb "github.com/child6yo/y-lms-discalc/agent/proto"
 )
 
-func Worker(g int, grpcClient pb.OrchestratorServiceClient) {
+func Worker(g int, grpcClient pb.OrchestratorServiceClient, evaluator service.Evaluator) {
 	for {
 		resp, err := grpcClient.GetTask(context.TODO(), nil)
 		if err != nil {
@@ -28,7 +28,7 @@ func Worker(g int, grpcClient pb.OrchestratorServiceClient) {
 		resultCh := make(chan agent.Result)
 		go func() {
 			defer cancel()
-			result := service.EvaluatePostfix(task)
+			result := evaluator.EvaluatePostfix(task)
 			resultCh <- result
 		}()
 
