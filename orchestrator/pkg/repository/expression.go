@@ -7,10 +7,10 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-func (r *Repository) AddExpression(userId int, expression *orchestrator.Expression) (int, error) {
+func (d *mainDatabase) AddExpression(userId int, expression *orchestrator.Expression) (int, error) {
 	query := fmt.Sprintf("INSERT INTO %s (user_id, exp, result, status) values ($1, $2, $3, $4)", expressionTable)
 
-	res, err := r.Db.Exec(query, userId, expression.Expression, expression.Result, expression.Status)
+	res, err := d.db.Exec(query, userId, expression.Expression, expression.Result, expression.Status)
 	if err != nil {
 		return 0, err
 	}
@@ -22,26 +22,26 @@ func (r *Repository) AddExpression(userId int, expression *orchestrator.Expressi
 	return int(expId), nil
 }
 
-func (r *Repository) UpdateExpression(expression *orchestrator.Expression) error {
+func (d *mainDatabase) UpdateExpression(expression *orchestrator.Expression) error {
 	id, err := strconv.Atoi(expression.Id)
 	if err != nil {
 		return err
 	}
 	query := fmt.Sprintf("UPDATE %s SET result=$1, status=$2 WHERE id=%d", expressionTable, id)
 
-	_, err = r.Db.Exec(query, expression.Result, expression.Status)
+	_, err = d.db.Exec(query, expression.Result, expression.Status)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Expression, error) {
+func (d *mainDatabase) GetExpressionById(expId, userId int) (*orchestrator.Expression, error) {
 	var result orchestrator.Expression
 
 	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1 AND id=$2", expressionTable)
 
-	row := r.Db.QueryRow(query, userId, expId)
+	row := d.db.QueryRow(query, userId, expId)
 	err := row.Scan(&result.Id, &result.Result, &result.Expression, &result.Status)
 	if err != nil {
 		return nil, err
@@ -50,11 +50,11 @@ func (r *Repository) GetExpressionById(expId, userId int) (*orchestrator.Express
 	return &result, nil
 }
 
-func (r *Repository) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
+func (d *mainDatabase) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
 	var result []orchestrator.Expression
 
 	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1", expressionTable)
-	rows, err := r.Db.Query(query, userId)
+	rows, err := d.db.Query(query, userId)
 	if err != nil {
 		return nil, err
 	}

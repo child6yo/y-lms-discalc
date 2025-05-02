@@ -2,40 +2,40 @@ package repository
 
 import "github.com/child6yo/y-lms-discalc/orchestrator"
 
-type ExpressionCache struct {
+type expressionElement struct {
 	expression string
 	result     *orchestrator.Expression
 }
 
-func (r *Repository) CacheResult(result *orchestrator.Expression) {
-	r.Cache.mutex.Lock()
-	defer r.Cache.mutex.Unlock()
+func (c *expressionCache) Put(result *orchestrator.Expression) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	if element, ok := r.Cache.cache[result.Expression]; ok {
-		element.Value.(*ExpressionCache).result = result
-		r.Cache.list.MoveToFront(element)
+	if element, ok := c.cache[result.Expression]; ok {
+		element.Value.(*expressionElement).result = result
+		c.list.MoveToFront(element)
 	} else {
-		entry := &ExpressionCache{expression: result.Expression, result: result}
-		element := r.Cache.list.PushFront(entry)
-		r.Cache.cache[result.Expression] = element
+		entry := &expressionElement{expression: result.Expression, result: result}
+		element := c.list.PushFront(entry)
+		c.cache[result.Expression] = element
 
-		if r.Cache.list.Len() > r.Cache.capacity {
-			oldest := r.Cache.list.Back()
+		if c.list.Len() > c.capacity {
+			oldest := c.list.Back()
 			if oldest != nil {
-				delete(r.Cache.cache, oldest.Value.(*ExpressionCache).expression)
-				r.Cache.list.Remove(oldest)
+				delete(c.cache, oldest.Value.(*expressionElement).expression)
+				c.list.Remove(oldest)
 			}
 		}
 	}
 }
 
-func (r *Repository) GetCachedResult(expression string) (*orchestrator.Expression, bool) {
-	r.Cache.mutex.Lock()
-	defer r.Cache.mutex.Unlock()
+func (c *expressionCache) Get(expression string) (*orchestrator.Expression, bool) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	if element, ok := r.Cache.cache[expression]; ok {
-		r.Cache.list.MoveToFront(element)
-		return element.Value.(*ExpressionCache).result, true
+	if element, ok := c.cache[expression]; ok {
+		c.list.MoveToFront(element)
+		return element.Value.(*expressionElement).result, true
 	}
 
 	return nil, false

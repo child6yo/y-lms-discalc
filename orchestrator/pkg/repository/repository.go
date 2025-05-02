@@ -2,11 +2,36 @@ package repository
 
 import (
 	"database/sql"
+
+	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
+type Cache interface {
+	Put(result *orchestrator.Expression)
+	Get(expression string) (*orchestrator.Expression, bool)
+}
+
+type Database interface {
+	CreateUser(user orchestrator.User) (int, error)
+	GetUser(login, password string) (*orchestrator.User, error)
+
+	AddExpression(userId int, expression *orchestrator.Expression) (int, error)
+	UpdateExpression(expression *orchestrator.Expression) error
+	GetExpressionById(expId, userId int) (*orchestrator.Expression, error)
+	GetExpressions(userId int) (*[]orchestrator.Expression, error)
+}
+
 type Repository struct {
-	Db *sql.DB
-	Cache *Cache
+	Database
+	Cache
+}
+
+type mainDatabase struct {
+	db *sql.DB
+}
+
+func newMainDatabase(db *sql.DB) *mainDatabase {
+	return &mainDatabase{db: db}
 }
 
 func NewRepository(cacheCap int) (*Repository, error) {
@@ -14,6 +39,6 @@ func NewRepository(cacheCap int) (*Repository, error) {
 	if err != nil {
 		return nil, err
 	}
-	cache := newCache(cacheCap)
-	return &Repository{Db: db, Cache: cache}, nil
+	cache := newExpressionCache(cacheCap)
+	return &Repository{Database: newMainDatabase(db), Cache: cache}, nil
 }

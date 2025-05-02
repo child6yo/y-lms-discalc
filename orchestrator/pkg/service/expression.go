@@ -7,7 +7,7 @@ import (
 )
 
 func (s *MainService) CulculateExpression(userId int, expression string) (int, error) {
-	cachedExp, exists := s.repo.GetCachedResult(expression)
+	cachedExp, exists := s.repo.Get(expression)
 	if !exists {
 		expEntity := orchestrator.Expression{Expression: expression, Status: "Calculating..."}
 		expId, err := s.repo.AddExpression(userId, &expEntity)
@@ -29,7 +29,7 @@ func (s *MainService) CulculateExpression(userId int, expression string) (int, e
 
 func (s *MainService) UpdateExpression(result *orchestrator.Expression) error {
 	if result.Status != "ERROR" {
-		s.repo.CacheResult(result)
+		s.repo.Put(result)
 	}
 
 	return s.repo.UpdateExpression(result)
