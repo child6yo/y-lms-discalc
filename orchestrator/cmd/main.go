@@ -138,7 +138,7 @@ func main() {
 		log.Println("failed to connect sqlight: ", err)
 		os.Exit(1)
 	}
-	defer repository.Db.Close()
+
 	service := service.NewService(repository, &expressionInput)
 	handler := h.NewHandler(service)
 
