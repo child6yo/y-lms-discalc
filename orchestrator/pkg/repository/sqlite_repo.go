@@ -12,7 +12,7 @@ const (
 	expressionTable = "expression"
 )
 
-func newSqliteDb() (*sql.DB, error) {
+func NewSqliteDb() (*sql.DB, error) {
 	ctx := context.TODO()
 
 	db, err := sql.Open("sqlite3", "database/discalc.db")

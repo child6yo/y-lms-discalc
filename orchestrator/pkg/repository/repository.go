@@ -34,11 +34,9 @@ func newMainDatabase(db *sql.DB) *mainDatabase {
 	return &mainDatabase{db: db}
 }
 
-func NewRepository(cacheCap int) (*Repository, error) {
-	db, err := newSqliteDb()
-	if err != nil {
-		return nil, err
+func NewRepository(db *sql.DB, cacheCap int) *Repository {
+	return &Repository{
+		Database: newMainDatabase(db),
+		Cache:    newExpressionCache(cacheCap),
 	}
-	cache := newExpressionCache(cacheCap)
-	return &Repository{Database: newMainDatabase(db), Cache: cache}, nil
 }
