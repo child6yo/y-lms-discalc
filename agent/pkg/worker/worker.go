@@ -20,7 +20,7 @@ func Worker(g int, grpcClient pb.OrchestratorServiceClient, evaluater service.Po
 		task := agent.Task{Id: resp.Id,
 			Arg1:          float64(resp.Arg1),
 			Arg2:          float64(resp.Arg2),
-			Operation:     resp.Opetation,
+			Operation:     resp.Operation,
 			OperationTime: time.Duration(resp.OperationTime)}
 
 		result := evaluater.PostfixEvaluate(task)
@@ -35,6 +35,6 @@ func Worker(g int, grpcClient pb.OrchestratorServiceClient, evaluater service.Po
 			log.Println("Post result error:", err)
 			continue
 		}
-		log.Printf("Task %s successfully done", task.Id)
+		log.Printf("Task %s successfully done by worker %d", task.Id, g)
 	}
 }

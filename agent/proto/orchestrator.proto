@@ -6,7 +6,7 @@ message TaskRequest {
     string id = 1;
     float arg1 = 2;
     float arg2 = 3;
-    string opetation = 4;
+    string operation = 4;
     int64 operationTime = 5;
 }
 

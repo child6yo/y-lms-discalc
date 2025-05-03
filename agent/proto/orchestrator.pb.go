@@ -26,7 +26,7 @@ type TaskRequest struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Arg1          float32                `protobuf:"fixed32,2,opt,name=arg1,proto3" json:"arg1,omitempty"`
 	Arg2          float32                `protobuf:"fixed32,3,opt,name=arg2,proto3" json:"arg2,omitempty"`
-	Opetation     string                 `protobuf:"bytes,4,opt,name=opetation,proto3" json:"opetation,omitempty"`
+	Operation     string                 `protobuf:"bytes,4,opt,name=operation,proto3" json:"operation,omitempty"`
 	OperationTime int64                  `protobuf:"varint,5,opt,name=operationTime,proto3" json:"operationTime,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -83,9 +83,9 @@ func (x *TaskRequest) GetArg2() float32 {
 	return 0
 }
 
-func (x *TaskRequest) GetOpetation() string {
+func (x *TaskRequest) GetOperation() string {
 	if x != nil {
-		return x.Opetation
+		return x.Operation
 	}
 	return ""
 }
@@ -202,7 +202,7 @@ const file_proto_orchestrator_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04arg1\x18\x02 \x01(\x02R\x04arg1\x12\x12\n" +
 	"\x04arg2\x18\x03 \x01(\x02R\x04arg2\x12\x1c\n" +
-	"\topetation\x18\x04 \x01(\tR\topetation\x12$\n" +
+	"\toperation\x18\x04 \x01(\tR\toperation\x12$\n" +
 	"\roperationTime\x18\x05 \x01(\x03R\roperationTime\"N\n" +
 	"\x0eResultResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
