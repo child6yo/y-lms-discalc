@@ -10,7 +10,7 @@ import (
 	pb "github.com/child6yo/y-lms-discalc/agent/proto"
 )
 
-func Worker(g int, grpcClient pb.OrchestratorServiceClient, evaluator service.Evaluator) {
+func Worker(g int, grpcClient pb.OrchestratorServiceClient, evaluater service.PostfixEvaluater) {
 	for {
 		resp, err := grpcClient.GetTask(context.TODO(), nil)
 		if err != nil {
@@ -23,31 +23,18 @@ func Worker(g int, grpcClient pb.OrchestratorServiceClient, evaluator service.Ev
 			Operation:     resp.Opetation,
 			OperationTime: time.Duration(resp.OperationTime)}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(task.OperationTime)*time.Second)
+		result := evaluater.PostfixEvaluate(task)
 
-		resultCh := make(chan agent.Result)
-		go func() {
-			defer cancel()
-			result := evaluator.EvaluatePostfix(task)
-			resultCh <- result
-		}()
-
-		select {
-		case result := <-resultCh:
-			if result.Error != "" {
-				log.Println("Evaluation error:", result.Error)
-				continue
-			}
-
-			_, err := grpcClient.TakeResult(context.TODO(), &pb.ResultResponse{Id: result.Id, Result: float32(result.Result), Error: result.Error})
-			if err != nil {
-				log.Println("Post result error:", err)
-				continue
-			}
-			log.Printf("Task %s successfully done", task.Id)
-		case <-ctx.Done():
-			log.Printf("Worker %d: Task %s exceeded time limit of %d seconds", g, task.Id, task.OperationTime)
+		if result.Error != "" {
+			log.Println("Evaluation error:", result.Error)
 			continue
 		}
+
+		_, err = grpcClient.TakeResult(context.TODO(), &pb.ResultResponse{Id: result.Id, Result: float32(result.Result), Error: result.Error})
+		if err != nil {
+			log.Println("Post result error:", err)
+			continue
+		}
+		log.Printf("Task %s successfully done", task.Id)
 	}
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestEvaluatePostfix(t *testing.T) {
-	p := PostfixEvaluator{}
+	p := EvaluateService{}
 
 	tests := []struct {
 		name           string
@@ -72,7 +72,7 @@ func TestEvaluatePostfix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := p.EvaluatePostfix(tt.task)
+			result := p.PostfixEvaluate(tt.task)
 
 			if result != tt.expectedResult {
 				t.Errorf("For task %+v, expected result %+v, got %+v", tt.task, tt.expectedResult, result)

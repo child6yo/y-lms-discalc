@@ -55,14 +55,14 @@ func main() {
 	grpcClient := pb.NewOrchestratorServiceClient(conn)
 
 	computingPower := getIntEnv("COMPUTING_POWER", 10)
-	evaluator := service.NewPostfixEvaluator()
+	evaluater := service.NewEvaluateService()
 
 	var wg sync.WaitGroup
 
 	for w := 1; w <= computingPower; w++ {
 		go func() {
 			defer wg.Done()
-			worker.Worker(w, grpcClient, evaluator)
+			worker.Worker(w, grpcClient, evaluater)
 		}()
 		time.Sleep(1 * time.Second)
 		wg.Add(1)
