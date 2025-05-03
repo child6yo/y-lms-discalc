@@ -19,7 +19,7 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/repository"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/rpc"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
-	pb "github.com/child6yo/y-lms-discalc/orchestrator/proto"
+	pb "github.com/child6yo/y-lms-discalc/shared/proto"
 	"google.golang.org/grpc"
 )
 

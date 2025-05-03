@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/agent"
-	pb "github.com/child6yo/y-lms-discalc/agent/proto"
+	pb "github.com/child6yo/y-lms-discalc/shared/proto"
 	"google.golang.org/grpc"
 )
 

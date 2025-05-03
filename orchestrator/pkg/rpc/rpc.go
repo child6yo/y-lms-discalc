@@ -7,7 +7,7 @@ import (
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
-	pb "github.com/child6yo/y-lms-discalc/orchestrator/proto"
+	pb "github.com/child6yo/y-lms-discalc/shared/proto"
 )
 
 type Server struct {
@@ -31,7 +31,7 @@ func (s *Server) GetTask(ctx context.Context, _ *pb.Empty) (*pb.TaskRequest, err
 		return &pb.TaskRequest{Id: task.Id,
 			Arg1:          float32(task.Arg1),
 			Arg2:          float32(task.Arg2),
-			Opetation:     task.Operation,
+			Operation:     task.Operation,
 			OperationTime: int64(task.OperationTime)}, nil
 	case <-time.After(3 * time.Second):
 		return nil, errors.New("time limit exceeded")
