@@ -21,14 +21,16 @@ jobs:
     - name: Orchestrator build
       run: |
         cd orchestrator
-        set -a && source ../.env && set +a
+        set -a && source ../.env.example && set +a
+        set GRPC_HOST="localhost"
         go build ./...
 
     - name: Run orchestrator
-      run: go run ./cmd/main.go
+      run: |
+        go run ./cmd/main.go
+        cd orchestrator
     
     - name: Run integration tests
       run: |
-        cd -
         cd integration_tests
         go test -race ./...
