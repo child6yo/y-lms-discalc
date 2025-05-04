@@ -1,183 +1,125 @@
 package worker
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
+	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/agent"
+	pb "github.com/child6yo/y-lms-discalc/shared/proto"
+	"google.golang.org/grpc"
 )
 
-// fakeTransport реализует http.RoundTripper и позволяет имитировать различные ответы.
-type fakeTransport struct {
-	t             *testing.T
-	getCount      int
-	postCount     int
-	iterationChan chan struct{}
+type mockOrchestratorClient struct {
+	getTaskFunc    func(context.Context, *pb.Empty, ...grpc.CallOption) (*pb.TaskRequest, error)
+	takeResultFunc func(context.Context, *pb.ResultResponse, ...grpc.CallOption) (*pb.Empty, error)
 }
 
-func (ft *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	switch req.Method {
-	case http.MethodGet:
-		ft.getCount++
-		switch ft.getCount {
-		case 1:
-			// Итерация 1: имитируем ошибку GET
-			return nil, fmt.Errorf("simulated GET error")
-		case 2:
-			// Итерация 2: возвращаем ответ с не-OK статусом (например, 500)
-			return &http.Response{
-				StatusCode: http.StatusInternalServerError,
-				Body:       io.NopCloser(bytes.NewBufferString("error")),
-				Header:     make(http.Header),
-			}, nil
-		case 3:
-			// Итерация 3: возвращаем OK, но с невалидным JSON
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBufferString("invalid json")),
-				Header:     make(http.Header),
-			}, nil
-		case 4:
-			// Итерация 4: возвращаем задание, приводящее к ошибке вычисления (деление на ноль)
-			task := agent.Task{
-				Id:            "task_div0",
-				Operation:     "/",
-				Arg1:          5,
-				Arg2:          0, // вызовет ошибку деления на ноль в EvaluatePostfix
-				OperationTime: 3 * time.Second,
-			}
-			data, err := json.Marshal(task)
-			if err != nil {
-				ft.t.Fatalf("Failed to marshal task: %v", err)
-			}
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBuffer(data)),
-				Header:     make(http.Header),
-			}, nil
-		case 5:
-			// Итерация 5: возвращаем задание для успешной обработки, но POST имитируем ошибку
-			task := agent.Task{
-				Id:            "task_post_error",
-				Operation:     "+",
-				Arg1:          2,
-				Arg2:          3,
-				OperationTime: 3 * time.Second,
-			}
-			data, err := json.Marshal(task)
-			if err != nil {
-				ft.t.Fatalf("Failed to marshal task: %v", err)
-			}
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBuffer(data)),
-				Header:     make(http.Header),
-			}, nil
-		case 6:
-			// Итерация 6: возвращаем задание, которое должно успешно обработаться
-			task := agent.Task{
-				Id:            "task_success",
-				Operation:     "+",
-				Arg1:          2,
-				Arg2:          3,
-				OperationTime: 3 * time.Second,
-			}
-			data, err := json.Marshal(task)
-			if err != nil {
-				ft.t.Fatalf("Failed to marshal task: %v", err)
-			}
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBuffer(data)),
-				Header:     make(http.Header),
-			}, nil
-		default:
-			// Для последующих GET-запросов возвращаем не-OK, чтобы не обрабатывать их дальше
-			return &http.Response{
-				StatusCode: http.StatusInternalServerError,
-				Body:       io.NopCloser(bytes.NewBufferString("error")),
-				Header:     make(http.Header),
-			}, nil
-		}
-	case http.MethodPost:
-		ft.postCount++
-		switch ft.postCount {
-		case 1:
-			// Итерация 5: имитируем ошибку POST
-			return nil, fmt.Errorf("simulated POST error")
-		case 2:
-			// Итерация 6: проверяем содержимое POST и возвращаем успешный ответ
-			var res agent.Result
-			if err := json.NewDecoder(req.Body).Decode(&res); err != nil {
-				ft.t.Errorf("Failed to decode POST payload: %v", err)
-			}
-			// Ожидаем, что EvaluatePostfix вернул: {Id:"task_success", Result:5, Error:""}
-			expected := agent.Result{
-				Id:     "task_success",
-				Result: 5,
-				Error:  "",
-			}
-			if res != expected {
-				ft.t.Errorf("Expected POST payload %+v, got %+v", expected, res)
-			}
-			// Сигнализируем о завершении успешной итерации
-			select {
-			case ft.iterationChan <- struct{}{}:
-			default:
-			}
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBufferString("ok")),
-				Header:     make(http.Header),
-			}, nil
-		default:
-			// Для последующих POST возвращаем успех
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBufferString("ok")),
-				Header:     make(http.Header),
-			}, nil
-		}
-	default:
-		return nil, fmt.Errorf("unsupported method: %s", req.Method)
-	}
+func (m *mockOrchestratorClient) GetTask(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.TaskRequest, error) {
+	return m.getTaskFunc(ctx, in, opts...)
+}
+
+func (m *mockOrchestratorClient) TakeResult(ctx context.Context, in *pb.ResultResponse, opts ...grpc.CallOption) (*pb.Empty, error) {
+	return m.takeResultFunc(ctx, in, opts...)
+}
+
+type MockEvaluator struct {
+	EvaluateFunc func(task agent.Task) agent.Result
+}
+
+func (m *MockEvaluator) PostfixEvaluate(task agent.Task) agent.Result {
+	return m.EvaluateFunc(task)
 }
 
 func TestWorker(t *testing.T) {
-	// Сохраним оригинальный транспорт и восстановим его по завершении теста.
-	origTransport := http.DefaultClient.Transport
-	defer func() {
-		http.DefaultClient.Transport = origTransport
-	}()
-
-	// Канал, по которому мы получим сигнал успешной итерации (итерация 6).
-	iterationChan := make(chan struct{}, 1)
-	ft := &fakeTransport{
-		t:             t,
-		iterationChan: iterationChan,
+	tests := []struct {
+		name          string
+		getTask       func(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.TaskRequest, error)
+		evaluate      func(task agent.Task) agent.Result
+		takeResult    func(ctx context.Context, in *pb.ResultResponse, opts ...grpc.CallOption) (*pb.Empty, error)
+		expectSuccess bool
+	}{
+		{
+			name: "Successful task processing",
+			getTask: func(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.TaskRequest, error) {
+				return &pb.TaskRequest{
+					Id:            "1",
+					Arg1:          10,
+					Arg2:          5,
+					Operation:     "+",
+					OperationTime: 1,
+				}, nil
+			},
+			evaluate: func(task agent.Task) agent.Result {
+				return agent.Result{Id: task.Id, Result: 15}
+			},
+			takeResult: func(ctx context.Context, in *pb.ResultResponse, opts ...grpc.CallOption) (*pb.Empty, error) {
+				if in.Id != "1" || in.Result != 15 {
+					t.Errorf("Unexpected result: %v", in)
+				}
+				return &pb.Empty{}, nil
+			},
+			expectSuccess: true,
+		},
+		{
+			name: "Task evaluation error",
+			getTask: func(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.TaskRequest, error) {
+				return &pb.TaskRequest{
+					Id:            "2",
+					Arg1:          10,
+					Arg2:          0,
+					Operation:     "/",
+					OperationTime: 1,
+				}, nil
+			},
+			evaluate: func(task agent.Task) agent.Result {
+				return agent.Result{Id: task.Id, Error: "division by zero"}
+			},
+			takeResult: func(ctx context.Context, in *pb.ResultResponse, opts ...grpc.CallOption) (*pb.Empty, error) {
+				t.Error("TakeResult should not be called on evaluation error")
+				return nil, nil
+			},
+			expectSuccess: false,
+		},
+		{
+			name: "GetTask network error",
+			getTask: func(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.TaskRequest, error) {
+				return nil, context.DeadlineExceeded
+			},
+			evaluate: func(task agent.Task) agent.Result {
+				t.Error("Evaluate should not be called if GetTask fails")
+				return agent.Result{}
+			},
+			takeResult: func(ctx context.Context, in *pb.ResultResponse, opts ...grpc.CallOption) (*pb.Empty, error) {
+				t.Error("TakeResult should not be called if GetTask fails")
+				return nil, nil
+			},
+			expectSuccess: false,
+		},
 	}
 
-	// Переопределяем транспорт для http.DefaultClient, который используется в Worker.
-	http.DefaultClient.Transport = ft
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var once sync.Once
+			done := make(chan struct{})
 
-	// Запускаем Worker в отдельной горутине.
-	// Заметим: Worker работает бесконечно, поэтому мы не можем его остановить,
-	// но тест завершится, как только будет получен сигнал успешной итерации.
-	go func() {
-		// Здесь используем локальный адрес для теста
-		Worker(1, "http://localhost:8080/task")
-	}()
+			grpcClient := &mockOrchestratorClient{
+				getTaskFunc: func(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.TaskRequest, error) {
+					once.Do(func() { close(done) })
+					return tt.getTask(ctx, in, opts...)
+				},
+				takeResultFunc: tt.takeResult,
+			}
+			evaluator := &MockEvaluator{EvaluateFunc: tt.evaluate}
 
-	// Ждём сигнала успешной обработки (итерация 6).
-	select {
-	case <-iterationChan:
-		// Успех: Worker выполнил обработку задачи из итерации 6.
-	case <-time.After(15 * time.Second):
-		t.Fatal("Timeout waiting for Worker to process a task successfully")
+			go Worker(1, grpcClient, evaluator)
+
+			select {
+			case <-done:
+			case <-time.After(500 * time.Millisecond):
+				t.Error("Worker did not process task in time")
+			}
+		})
 	}
 }

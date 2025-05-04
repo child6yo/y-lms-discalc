@@ -5,29 +5,25 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-	"sync"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
+	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 )
 
-var (
-	currentId = 1
-	exps      = make(map[int]orchestrator.Expression)
-	mu        sync.Mutex
-)
-
-func HandleExpressionsChanel(c chan map[int]orchestrator.Expression) {
-	for expmap := range c {
-		for id, exp := range expmap {
-			mu.Lock()
-			exps[id] = exp
-			mu.Unlock()
-		}
-	}
+type Handler struct {
+	service service.Service
 }
 
-func httpNewError(w http.ResponseWriter, statusCode int, message string) {
-	log.Println("Handling error: ", message)
+func NewHandler(service service.Service) *Handler {
+	return &Handler{service: service}
+}
+
+func httpNewError(w http.ResponseWriter, statusCode int, message string, err error) {
+	if err != nil {
+		log.Println("Handling error: ", err)
+	} else {
+		log.Println("Unknown error: ", message)
+	}
 
 	response := orchestrator.ErrorModel{Error: message}
 	responseData, _ := json.MarshalIndent(response, "", " ")
@@ -41,7 +37,7 @@ func addCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
 
-func StaticFileHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) StaticFileHandler(w http.ResponseWriter, r *http.Request) {
 	addCORSHeaders(w)
 	absPath, err := filepath.Abs("./client/index.html")
 	if err != nil {

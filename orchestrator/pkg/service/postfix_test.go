@@ -34,7 +34,8 @@ func TestPostfixExpression(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		ex, err := PostfixExpression(tc.expression)
+		s := MainService{nil, nil}
+		ex, err := s.PostfixExpression(tc.expression)
 		if err != nil {
 			if tc.error {
 				continue

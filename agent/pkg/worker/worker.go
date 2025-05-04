@@ -1,70 +1,40 @@
 package worker
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/agent"
 	"github.com/child6yo/y-lms-discalc/agent/pkg/service"
+	pb "github.com/child6yo/y-lms-discalc/shared/proto"
 )
 
-func Worker(g int, url string) {
+func Worker(g int, grpcClient pb.OrchestratorServiceClient, evaluater service.PostfixEvaluater) {
 	for {
-		resp, err := http.Get(url)
+		resp, err := grpcClient.GetTask(context.TODO(), nil)
 		if err != nil {
-			log.Println("Get task error:", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			time.Sleep(2 * time.Second)
 			continue
 		}
 
-		var task agent.Task
-		if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
-			log.Println("Decode error:", err)
-			resp.Body.Close()
+		task := agent.Task{Id: resp.Id,
+			Arg1:          float64(resp.Arg1),
+			Arg2:          float64(resp.Arg2),
+			Operation:     resp.Operation,
+			OperationTime: time.Duration(resp.OperationTime)}
+
+		result := evaluater.PostfixEvaluate(task)
+
+		if result.Error != "" {
+			log.Println("Evaluation error:", result.Error)
 			continue
 		}
-		resp.Body.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(task.OperationTime)*time.Second)
-
-		resultCh := make(chan agent.Result)
-		go func() {
-			defer cancel()
-			result := service.EvaluatePostfix(task)
-			resultCh <- result
-		}()
-
-		select {
-		case result := <-resultCh:
-			if result.Error != "" {
-				log.Println("Evaluation error:", result.Error)
-				continue
-			}
-
-			resultJSON, err := json.Marshal(result)
-			if err != nil {
-				log.Println("Marshal error:", err)
-				continue
-			}
-
-			postResp, err := http.Post(url, "application/json", bytes.NewBuffer(resultJSON))
-			if err != nil {
-				log.Println("Post result error:", err)
-				continue
-			}
-			postResp.Body.Close()
-		case <-ctx.Done():
-			log.Printf("Worker %d: Task %s exceeded time limit of %d seconds", g, task.Id, task.OperationTime)
+		_, err = grpcClient.TakeResult(context.TODO(), &pb.ResultResponse{Id: result.Id, Result: float32(result.Result), Error: result.Error})
+		if err != nil {
+			log.Println("Post result error:", err)
 			continue
 		}
+		log.Printf("Task %s successfully done by worker %d", task.Id, g)
 	}
 }

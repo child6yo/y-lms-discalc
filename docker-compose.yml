@@ -4,13 +4,22 @@ services:
   orchestrator:
     build: ./orchestrator
     command: ./orchestrator
+    volumes:
+      - ./orchestrator/database:/orchestrator/database
     ports:
       - 8000:8000
     environment:
-      - TIME_ADDITION_MS=100
-      - TIME_SUBTRACTION_MS=100
-      - TIME_MULTIPLICATIONS_MS=100
-      - TIME_DIVISIONS_MS=100
+      - TZ=UTC
+
+      - TIME_ADDITION_MS
+      - TIME_SUBTRACTION_MS
+      - TIME_MULTIPLICATIONS_MS
+      - TIME_DIVISIONS_MS
+
+      - HTTP_PORT
+
+      - GRPC_HOST
+      - GRPC_PORT
     networks:
       - app-network
 
@@ -22,7 +31,10 @@ services:
     depends_on:
       - orchestrator
     environment:
-      - COMPUTING_POWER=50
+      - COMPUTING_POWER
+
+      - GRPC_HOST
+      - GRPC_PORT
     networks:
       - app-network
 

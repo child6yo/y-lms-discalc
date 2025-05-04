@@ -1,203 +1,330 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
+	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service/mock"
 )
 
-type TestResponse1 struct {
-	Id    int    `json:"id,omitempty"`
-	Error string `json:"error,omitempty"`
-}
-
-func TestCalculateExpression(t *testing.T) {
-	testCases := []struct {
+func TestCulculateExpression(t *testing.T) {
+	tests := []struct {
 		name         string
-		requestBody  *strings.Reader
-		expectBody   TestResponse1
-		expectStatus int
+		requestBody  string
+		setupContext func(r *http.Request) *http.Request
+		mockFunc     func(*mock.MockService)
+		wantStatus   int
+		wantResponse string
 	}{
 		{
-			name:         "201, Created",
-			requestBody:  strings.NewReader(`{"expression":"2+2"}`),
-			expectBody:   TestResponse1{Id: 1},
-			expectStatus: 201,
+			name:        "successfull case",
+			requestBody: `{"expression":"2+2*2"}`,
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
+					return 1, nil
+				}
+			},
+			wantStatus:   201,
+			wantResponse: `{"id":1}`,
 		},
 		{
-			name:         "422, Expression is not valid 1",
-			requestBody:  strings.NewReader(`{"expression":1}`),
-			expectBody:   TestResponse1{Error: "Expression is not valid"},
-			expectStatus: 422,
+			name:        "unauthorize error",
+			requestBody: `{"expression":"2+2*2"}`,
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, nil)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
+					return 1, nil
+				}
+			},
+			wantStatus:   401,
+			wantResponse: `{"error":"JWT is not valid"}`,
 		},
 		{
-			name:         "422, Expression is not valid 2",
-			requestBody:  strings.NewReader(`{"expression":"2("}`),
-			expectBody:   TestResponse1{Error: "Expression is not valid"},
-			expectStatus: 422,
+			name:        "invalid data error",
+			requestBody: `{"e":}`,
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
+					return 1, nil
+				}
+			},
+			wantStatus:   422,
+			wantResponse: `{"error":"Expression is not valid"}`,
 		},
 		{
-			name:         "500, Internal server error",
-			requestBody:  strings.NewReader(``),
-			expectBody:   TestResponse1{Error: "Internal server error"},
-			expectStatus: 500,
+			name:        "invalid input error",
+			requestBody: `{"expression":"2+"}`,
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
+					return 0, errors.New("something went wrong")
+				}
+			},
+			wantStatus:   500,
+			wantResponse: `{"error":"Internal server error"}`,
 		},
 	}
 
-	c := make(chan orchestrator.ExpAndId, 5)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mock.MockService{}
+			tt.mockFunc(mockService)
+			handler := &Handler{service: mockService}
 
-	for _, test := range testCases {
-		req := httptest.NewRequest("POST", "http://localhost:8000/api/v1/calculate", test.requestBody)
-		w := httptest.NewRecorder()
-		CulculateExpression(c)(w, req)
+			req := httptest.NewRequest("POST", "/calculate", strings.NewReader(tt.requestBody))
+			req.Header.Set("Content-Type", "application/json")
+			req = tt.setupContext(req)
 
-		resp := w.Result()
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Test %s: error reading response body: %v", test.name, err)
-		}
+			w := httptest.NewRecorder()
+			handler.CulculateExpression(w, req)
 
-		var r TestResponse1
-		json.Unmarshal(body, &r)
+			resp := w.Result()
+			if resp.StatusCode != tt.wantStatus {
+				t.Errorf("got status %d, want %d", resp.StatusCode, tt.wantStatus)
+			}
 
-		if r != test.expectBody {
-			t.Errorf("test %s failed: result: %+v, expected: %+v", test.name, r, test.expectBody)
-		} else if resp.StatusCode != test.expectStatus {
-			t.Errorf("test %s failed: result: %d, expected: %d", test.name, resp.StatusCode, test.expectStatus)
-		} else {
-			t.Logf("Test %s success", test.name)
-		}
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			var got, want map[string]interface{}
+			json.Unmarshal(body, &got)
+			json.Unmarshal([]byte(tt.wantResponse), &want)
+
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("got response %v, want %v", got, want)
+			}
+		})
 	}
 }
 
 func TestGetExpressions(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name         string
-		exps         map[int]orchestrator.Expression
-		expectBody   orchestrator.ExpressionList
-		expectStatus int
+		setupContext func(r *http.Request) *http.Request
+		mockFunc     func(*mock.MockService)
+		wantStatus   int
+		wantResponse string
 	}{
 		{
-			name: "200, Non-empty expressions",
-			exps: map[int]orchestrator.Expression{
-				1: {Id: 1, Status: "Success", Result: 2},
-				2: {Id: 2, Status: "ERROR", Result: 0},
+			name: "successfull case",
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
 			},
-			expectBody: orchestrator.ExpressionList{
-				Expressions: []orchestrator.Expression{
-					{Id: 1, Status: "Success", Result: 2},
-					{Id: 2, Status: "ERROR", Result: 0},
-				},
+			mockFunc: func(ms *mock.MockService) {
+				ms.GetExpressionsFunc = func(userId int) (*[]orchestrator.Expression, error) {
+					return &[]orchestrator.Expression{
+						{Id: "1", Result: 4, Expression: "2+2", Status: "Success"},
+						{Id: "2", Result: 0, Expression: "2+", Status: "ERROR"}}, nil
+				}
 			},
-			expectStatus: 200,
+			wantStatus: 200,
+			wantResponse: `{"expressions": [
+								{
+									"id": "1",
+									"result": 4,
+									"expression": "2+2",
+									"error": "Success"
+								},
+								{
+									"id": "2",
+									"result": 0,
+									"expression": "2+",
+									"error": "ERROR"
+								}
+							]}`,
 		},
 		{
-			name:         "200, Empty expressions",
-			exps:         map[int]orchestrator.Expression{},
-			expectBody:   orchestrator.ExpressionList{Expressions: []orchestrator.Expression{}},
-			expectStatus: 200,
+			name: "unauthorize error",
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, nil)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.GetExpressionsFunc = func(userId int) (*[]orchestrator.Expression, error) {
+					return &[]orchestrator.Expression{}, nil
+				}
+			},
+			wantStatus:   401,
+			wantResponse: `{"error": "JWT is not valid"}`,
+		},
+		{
+			name: "service error",
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.GetExpressionsFunc = func(userId int) (*[]orchestrator.Expression, error) {
+					return nil, errors.New("something went wrong")
+				}
+			},
+			wantStatus:   500,
+			wantResponse: `{"error": "Internal server error"}`,
 		},
 	}
 
-	for _, test := range testCases {
-		exps = test.exps
-		req := httptest.NewRequest("GET", "http://localhost:8000/api/v1/expressions", nil)
-		w := httptest.NewRecorder()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mock.MockService{}
+			tt.mockFunc(mockService)
+			handler := &Handler{service: mockService}
 
-		GetExpressions(w, req)
+			req := httptest.NewRequest("GET", "/calculate", nil)
+			req.Header.Set("Content-Type", "application/json")
+			req = tt.setupContext(req)
 
-		resp := w.Result()
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Test %s: error reading response body: %v", test.name, err)
-		}
+			w := httptest.NewRecorder()
+			handler.GetExpressions(w, req)
 
-		var result orchestrator.ExpressionList
-		err = json.Unmarshal(body, &result)
-		if err != nil {
-			t.Fatalf("Test %s: error unmarshalling response body: %v", test.name, err)
-		}
+			resp := w.Result()
+			if resp.StatusCode != tt.wantStatus {
+				t.Errorf("got status %d, want %d", resp.StatusCode, tt.wantStatus)
+			}
 
-		if !reflect.DeepEqual(result, test.expectBody) {
-			t.Errorf("test %s failed: result: %+v, expected: %+v", test.name, result, test.expectBody)
-		} else if resp.StatusCode != test.expectStatus {
-			t.Errorf("test %s failed: result: %d, expected: %d", test.name, resp.StatusCode, test.expectStatus)
-		} else {
-			t.Logf("Test %s success", test.name)
-		}
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			var got, want map[string]interface{}
+			json.Unmarshal(body, &got)
+			json.Unmarshal([]byte(tt.wantResponse), &want)
+
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("got response %v, want %v", got, want)
+			}
+		})
 	}
 }
 
-func TestGetExpressionById(t *testing.T) {
-	testCases := []struct {
+func TestGetExpressionsById(t *testing.T) {
+	tests := []struct {
 		name         string
+		setupContext func(r *http.Request) *http.Request
+		mockFunc     func(*mock.MockService)
 		path         string
-		exps         map[int]orchestrator.Expression
-		expectBody   orchestrator.Expression
-		expectStatus int
+		wantStatus   int
+		wantResponse string
 	}{
 		{
-			name: "200, Valid expression ID",
-			path: "/api/v1/expressions/1",
-			exps: map[int]orchestrator.Expression{
-				1: {Id: 1, Status: "Success", Result: 0},
+			name: "successfull case",
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
 			},
-			expectBody:   orchestrator.Expression{Id: 1, Status: "Success", Result: 0},
-			expectStatus: 200,
+			mockFunc: func(ms *mock.MockService) {
+				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+					return &orchestrator.Expression{
+						Id:         "1",
+						Result:     4,
+						Expression: "2+2",
+						Status:     "Success"}, nil
+				}
+			},
+			path:       "/api/v1/expressions/1",
+			wantStatus: 200,
+			wantResponse: `{
+							"id": "1",
+							"result": 4,
+							"expression": "2+2",
+							"error": "Success"
+							}`,
 		},
 		{
-			name: "404, Invalid expression ID",
-			path: "/api/v1/expressions/99",
-			exps: map[int]orchestrator.Expression{
-				1: {Id: 1, Status: "Success", Result: 0},
+			name: "unauthorize error",
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, nil)
+				return r.WithContext(ctx)
 			},
-			expectBody:   orchestrator.Expression{},
-			expectStatus: 404,
+			mockFunc: func(ms *mock.MockService) {
+				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+					return &orchestrator.Expression{}, nil
+				}
+			},
+			path:       "/api/v1/expressions/1",
+			wantStatus: 401,
+			wantResponse: `{"error":"JWT is not valid"}`,
 		},
 		{
-			name:         "500, Malformed URL",
-			path:         "/api/v1/expressions/abc",
-			exps:         map[int]orchestrator.Expression{},
-			expectBody:   orchestrator.Expression{},
-			expectStatus: 500,
+			name: "unknown path error",
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+					return &orchestrator.Expression{}, nil
+				}
+			},
+			path:       "/api/v1/expressions/one",
+			wantStatus: 500,
+			wantResponse: `{"error":"Internal server error"}`,
+		},
+		{
+			name: "service error",
+			setupContext: func(r *http.Request) *http.Request {
+				ctx := context.WithValue(r.Context(), userID, 123)
+				return r.WithContext(ctx)
+			},
+			mockFunc: func(ms *mock.MockService) {
+				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+					return nil, errors.New("something went wrong")
+				}
+			},
+			path:       "/api/v1/expressions/1",
+			wantStatus: 500,
+			wantResponse: `{"error":"Internal server error"}`,
 		},
 	}
 
-	for _, test := range testCases {
-		exps = test.exps
-		req := httptest.NewRequest("GET", "http://localhost:8000"+test.path, nil)
-		w := httptest.NewRecorder()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mock.MockService{}
+			tt.mockFunc(mockService)
+			handler := &Handler{service: mockService}
 
-		GetExpressionById(w, req)
+			req := httptest.NewRequest("POST", tt.path, nil)
+			req.Header.Set("Content-Type", "application/json")
+			req = tt.setupContext(req)
 
-		resp := w.Result()
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Test %s: error reading response body: %v", test.name, err)
-		}
+			w := httptest.NewRecorder()
+			handler.GetExpressionById(w, req)
 
-		var result orchestrator.Expression
-		if test.expectStatus == 200 {
-			err = json.Unmarshal(body, &result)
-			if err != nil {
-				t.Fatalf("Test %s: error unmarshalling response body: %v", test.name, err)
+			resp := w.Result()
+			if resp.StatusCode != tt.wantStatus {
+				t.Errorf("got status %d, want %d", resp.StatusCode, tt.wantStatus)
 			}
-		}
 
-		if resp.StatusCode != test.expectStatus {
-			t.Errorf("test %s failed: result: %d, expected: %d", test.name, resp.StatusCode, test.expectStatus)
-		} else if test.expectStatus == 200 && !reflect.DeepEqual(result, test.expectBody) {
-			t.Errorf("test %s failed: result: %+v, expected: %+v", test.name, result, test.expectBody)
-		} else {
-			t.Logf("Test %s success", test.name)
-		}
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			var got, want map[string]interface{}
+			json.Unmarshal(body, &got)
+			json.Unmarshal([]byte(tt.wantResponse), &want)
+
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("got response %v, want %v", got, want)
+			}
+		})
 	}
 }

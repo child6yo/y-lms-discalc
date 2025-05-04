@@ -2,47 +2,45 @@ package orchestrator
 
 import "time"
 
-type ExpressionInput struct {
-	Expression string `json:"expression"`
-}
+type (
+	Expression struct {
+		Id         string  `json:"id"`
+		Result     float64 `json:"result"`
+		Expression string  `json:"expression"`
+		Status     string  `json:"error"`
+	}
 
-type ExpressionId struct {
-	Id int `json:"id"`
-}
+	ExpressionInput struct {
+		Expression string `json:"expression"`
+	}
 
-type ExpAndId struct {
-	Id         int
-	Expression []string
-}
+	ExpressionId struct {
+		Id int `json:"id"`
+	}
 
-type Expression struct {
-	Id     int     `json:"id"`
-	Status string  `json:"status"`
-	Result float64 `json:"result"`
-}
+	ExpressionOutput struct {
+		Expression Expression `json:"expression"`
+	}
 
-type ExpressionOutput struct {
-	Expression Expression `json:"expression"`
-}
+	ExpressionListOutput struct {
+		Expressions []Expression `json:"expressions"`
+	}
 
-type ExpressionList struct {
-	Expressions []Expression `json:"expressions"`
-}
+	Task struct {
+		Id            string        `json:"id"`
+		Arg1          float64       `json:"arg1"`
+		Arg2          float64       `json:"arg2"`
+		Operation     string        `json:"operation"`
+		OperationTime time.Duration `json:"operation_time"`
+	}
 
-type Task struct {
-	Id            string        `json:"id"`
-	Arg1          float64       `json:"arg1"`
-	Arg2          float64       `json:"arg2"`
-	Operation     string        `json:"operation"`
-	OperationTime time.Duration `json:"operation_time"`
-}
+	ErrorModel struct {
+		Error string `json:"error"`
+	}
 
-type Result struct {
-	Id     string  `json:"id"`
-	Result float64 `json:"result"`
-	Error  string  `json:"error"`
-}
-
-type ErrorModel struct {
-	Error string `json:"error"`
-}
+	User struct {
+		Id       int    `json:"id" db:"id"`
+		Login    string `json:"login" db:"login"`
+		Password string `json:"password" db:"password"`
+	}
+)
