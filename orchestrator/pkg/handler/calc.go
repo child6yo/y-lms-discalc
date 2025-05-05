@@ -10,11 +10,11 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-// CulculateExpression - хендлер, отвечающий за прием арифметических выражений.
+// CalculateExpression - хендлер, отвечающий за прием арифметических выражений.
 //
 // В случае успеха направляет выражение на обработку;
 // пользователю возвращает айди выражения, находящегося в обработке.
-func (h *Handler) CulculateExpression(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CalculateExpression(w http.ResponseWriter, r *http.Request) {
 	var req orchestrator.ExpressionInput
 
 	data, err := io.ReadAll(r.Body)

@@ -55,7 +55,7 @@ type httpServer struct {
 func (h *httpServer) startHTTPServer(port string, handler *h.Handler) error {
 	http.HandleFunc("/api/v1/calculate", handler.AuthorizeMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			handler.CulculateExpression(w, r)
+			handler.CalculateExpression(w, r)
 		} else {
 			http.NotFound(w, r)
 		}

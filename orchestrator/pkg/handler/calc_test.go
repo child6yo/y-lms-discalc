@@ -15,7 +15,7 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service/mock"
 )
 
-func TestCulculateExpression(t *testing.T) {
+func TestCalculateExpression(t *testing.T) {
 	tests := []struct {
 		name         string
 		requestBody  string
@@ -97,7 +97,7 @@ func TestCulculateExpression(t *testing.T) {
 			req = tt.setupContext(req)
 
 			w := httptest.NewRecorder()
-			handler.CulculateExpression(w, req)
+			handler.CalculateExpression(w, req)
 
 			resp := w.Result()
 			if resp.StatusCode != tt.wantStatus {
