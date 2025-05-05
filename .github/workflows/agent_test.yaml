@@ -10,6 +10,9 @@ on:
 jobs:
   agent-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
     steps:
     - uses: actions/checkout@v3
 
@@ -20,31 +23,24 @@ jobs:
     
     - name: Build
       run: |
-        cd agent
         set -a && source ../.env.example && set +a
         set GRPC_HOST="localhost"
         go build ./...
     
     - name: Vet
-      run: |
-        go vet ./...
-        cd agent
+      run: go vet ./...
 
     - name: Install staticcheck
       run: go install honnef.co/go/tools/cmd/staticcheck@latest
 
     - name: Run staticcheck
-      run: |
-        staticcheck ./...
-        cd agent
+      run: staticcheck ./...
 
     - name: Install golint
       run: go install golang.org/x/lint/golint@latest
 
     - name: Run golint
-      run: |
-        golint ./...
-        cd agent
+      run: golint ./...
 
     - name: Run tests
       run: go test -race -vet=off ./...
