@@ -20,7 +20,7 @@ jobs:
     - name: Build Orchestrator
       run: |
         cd orchestrator
-        go build -o ../orchestrator main.go
+        go build -o ../orchestrator cmd/main.go
 
     - name: Run Orchestrator in background
       run: |
