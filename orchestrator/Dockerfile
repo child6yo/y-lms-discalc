@@ -20,6 +20,8 @@ RUN apk add --no-cache tzdata ca-certificates
 WORKDIR /orchestrator
 
 COPY --from=builder /orchestrator/orchestrator .
+COPY client/ /orchestrator/client/
+
 RUN mkdir -p /orchestrator/database && \
     chown -R 1000:1000 /orchestrator/database && \
     chmod -R 755 /orchestrator/database
