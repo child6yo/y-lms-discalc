@@ -20,15 +20,17 @@ jobs:
       - name: Build Orchestrator
         run: |
           cd orchestrator
-          go build -o ../orchestrator cmd/main.go
+          go build -o ./orchestrator cmd/main.go
 
       - name: Make orchestrator executable
         run: |
+          cd orchestrator
           chmod +x ./orchestrator
 
       - name: Run Orchestrator in background
         run: |
-          nohup ./orchestrator > orchestrator.log 2>&1 &
+          cd orchestrator
+          nohup ./orchestrator > ../orchestrator.log 2>&1 &
           sleep 5
 
       - name: Wait for server to start
