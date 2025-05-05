@@ -40,7 +40,7 @@ func getIntEnv(key string, defaultValue int) int {
 }
 
 func main() {
-	gRPChost := getEnv("GRPC_HOST", "orchestrator")
+	gRPChost := getEnv("GRPC_HOST", "localhost")
 	gRPCport := getEnv("GRPC_PORT", "5000")
 	addr := fmt.Sprintf("%s:%s", gRPChost, gRPCport)
 
