@@ -24,8 +24,8 @@ jobs:
 
     - name: Run Orchestrator in background
       run: |
-        nohup ./orchestrator > orchestrator.log 2>&1 &
-        sleep 5
+        nohup ./orchestrator/cmd/main.go > orchestrator.log 2>&1 &
+        sleep 15
 
     - name: Wait for server to start
       run: |
