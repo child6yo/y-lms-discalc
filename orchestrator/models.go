@@ -4,6 +4,11 @@ import "time"
 
 type (
 	// Expression - арифметическое выражение. Может также содержать результат выражения и статус.
+	//
+	// Допустимые значения статусов:
+	//  - ERROR: ошибка
+	//  - Success: успешно вычислено
+	//  - Calculating: в процессе выполнения
 	Expression struct {
 		ID         string  `json:"id"`
 		Result     float64 `json:"result"`
@@ -19,11 +24,6 @@ type (
 	// ExpressionID - целочисленное айди арифметического выражения.
 	ExpressionID struct {
 		ID int `json:"id"`
-	}
-
-	// ExpressionOutput - арифметическое выражение, передающееся клиенту по HTTP.
-	ExpressionOutput struct {
-		Expression Expression `json:"expression"`
 	}
 
 	// ExpressionListOutput - список арифметических выражений, передающихся клиенту по HTTP.
