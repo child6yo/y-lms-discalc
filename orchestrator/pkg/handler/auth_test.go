@@ -31,7 +31,7 @@ func TestCreateUser(t *testing.T) {
 				}
 			},
 			wantStatus:   http.StatusCreated,
-			wantResponse: `{"id":123,"login":"test","password":"secret"}`,
+			wantResponse: `{"id":123}`,
 		},
 		{
 			name:        "empty request body",
