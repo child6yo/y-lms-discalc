@@ -40,7 +40,11 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := orchestrator.User{ID: user.ID, Login: user.Login, Password: user.Password}
+	type output struct {
+		ID int `json:"id"`
+	}
+
+	response := output{user.ID}
 	responseData, err := json.MarshalIndent(response, "", " ")
 	if err != nil {
 		httpNewError(w, 500, "Internal server error", err)
