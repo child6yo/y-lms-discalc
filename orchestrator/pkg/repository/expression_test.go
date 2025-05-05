@@ -22,7 +22,7 @@ func TestAddExpression(t *testing.T) {
 	r := mainDatabase{db: mockDB}
 
 	type args struct {
-		userId     int
+		userID     int
 		expression *orchestrator.Expression
 	}
 	type mockBehavior func(args args)
@@ -39,12 +39,12 @@ func TestAddExpression(t *testing.T) {
 			mockFunc: func(args args) {
 				mock.ExpectExec("INSERT INTO expression").
 					WithArgs(
-						args.userId, args.expression.Expression,
+						args.userID, args.expression.Expression,
 						args.expression.Result, args.expression.Status,
 					).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			input: args{
-				userId: 1,
+				userID: 1,
 				expression: &orchestrator.Expression{
 					Expression: "2+2",
 					Result:     4,
@@ -59,12 +59,12 @@ func TestAddExpression(t *testing.T) {
 			mockFunc: func(args args) {
 				mock.ExpectExec("INSERT INTO expression").
 					WithArgs(
-						args.userId, args.expression.Expression,
+						args.userID, args.expression.Expression,
 						args.expression.Result, args.expression.Status,
 					).WillReturnError(errors.New("insert error"))
 			},
 			input: args{
-				userId:     0,
+				userID:     0,
 				expression: &orchestrator.Expression{},
 			},
 			expect:  0,
@@ -76,7 +76,7 @@ func TestAddExpression(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockFunc(tt.input)
 
-			got, err := r.AddExpression(tt.input.userId, tt.input.expression)
+			got, err := r.AddExpression(tt.input.userID, tt.input.expression)
 			if err == nil && tt.wantErr {
 				t.Errorf("expected error, got id %d", got)
 			}
@@ -99,8 +99,8 @@ func TestGetExpressionById(t *testing.T) {
 	r := mainDatabase{db: mockDB}
 
 	type args struct {
-		expId  int
-		userId int
+		expID  int
+		userID int
 	}
 	type mockBehavior func(args args)
 
@@ -120,15 +120,15 @@ func TestGetExpressionById(t *testing.T) {
 				query := regexp.QuoteMeta("SELECT id, result, exp, status FROM expression WHERE user_id=$1 AND id=$2")
 				mock.ExpectQuery(query).
 					WithArgs(
-						args.userId, args.expId,
+						args.userID, args.expID,
 					).
 					WillReturnRows(rows)
 			},
 			input: args{
-				expId:  1,
-				userId: 1,
+				expID:  1,
+				userID: 1,
 			},
-			expect:  orchestrator.Expression{Id: "1", Result: 4, Expression: "2+2", Status: "Success"},
+			expect:  orchestrator.Expression{ID: "1", Result: 4, Expression: "2+2", Status: "Success"},
 			wantErr: false,
 		},
 		{
@@ -137,13 +137,13 @@ func TestGetExpressionById(t *testing.T) {
 				query := regexp.QuoteMeta("SELECT id, result, exp, status FROM expression WHERE user_id=$1 AND id=$2")
 				mock.ExpectQuery(query).
 					WithArgs(
-						args.userId, args.expId,
+						args.userID, args.expID,
 					).
 					WillReturnError(errors.New("selecting error"))
 			},
 			input: args{
-				expId:  1,
-				userId: 1,
+				expID:  1,
+				userID: 1,
 			},
 			expect:  orchestrator.Expression{},
 			wantErr: true,
@@ -153,7 +153,7 @@ func TestGetExpressionById(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockFunc(tt.input)
 
-			got, err := r.GetExpressionById(tt.input.expId, tt.input.userId)
+			got, err := r.GetExpressionByID(tt.input.expID, tt.input.userID)
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("expected error, got: %v", got)
@@ -180,7 +180,7 @@ func TestGetExpressions(t *testing.T) {
 	r := mainDatabase{db: mockDB}
 
 	type args struct {
-		userId int
+		userID int
 	}
 	type mockBehavior func(args args)
 
@@ -199,25 +199,25 @@ func TestGetExpressions(t *testing.T) {
 						[]driver.Value{1, 4, "2+2", "Success"},
 						[]driver.Value{2, 0, "2+", "ERROR"},
 					)
-				
+
 				query := regexp.QuoteMeta("SELECT id, result, exp, status FROM expression WHERE user_id=$1")
-				mock.ExpectQuery(query).WithArgs(args.userId).WillReturnRows(rows)
+				mock.ExpectQuery(query).WithArgs(args.userID).WillReturnRows(rows)
 			},
 			input: args{
-				userId: 1,
+				userID: 1,
 			},
 			expect: &[]orchestrator.Expression{
 				{
-					Id: "1",
-					Result: 4,
+					ID:         "1",
+					Result:     4,
 					Expression: "2+2",
-					Status: "Success",
+					Status:     "Success",
 				},
 				{
-					Id: "2",
-					Result: 0,
+					ID:         "2",
+					Result:     0,
 					Expression: "2+",
-					Status: "ERROR",
+					Status:     "ERROR",
 				},
 			},
 			wantErr: false,
@@ -226,12 +226,12 @@ func TestGetExpressions(t *testing.T) {
 			name: "error handling",
 			mockFunc: func(args args) {
 				query := regexp.QuoteMeta("SELECT id, result, exp, status FROM expression WHERE user_id=$1")
-				mock.ExpectQuery(query).WithArgs(args.userId).WillReturnError(errors.New("selecting error"))
+				mock.ExpectQuery(query).WithArgs(args.userID).WillReturnError(errors.New("selecting error"))
 			},
 			input: args{
-				userId: 0,
+				userID: 0,
 			},
-			expect: nil,
+			expect:  nil,
 			wantErr: true,
 		},
 	}
@@ -240,7 +240,7 @@ func TestGetExpressions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockFunc(tt.input)
 
-			got, err := r.GetExpressions(tt.input.userId)
+			got, err := r.GetExpressions(tt.input.userID)
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("expected error, got: %v", got)

@@ -10,10 +10,16 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 )
 
+// Handler реализует хендлеры приема и отправки арифметических выражений по HTTP.
+// Требует на вход интерфейс сервиса service.Service, содержащего бизнес-логику.
 type Handler struct {
 	service service.Service
 }
 
+// NewHandler создает новый экземпляр хендлера.
+//
+// Параметры:
+//   - service: интерфейс сервиса service.Service, содержащего бизнес-логику.
 func NewHandler(service service.Service) *Handler {
 	return &Handler{service: service}
 }
@@ -37,6 +43,7 @@ func addCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
 
+// StaticFileHandler - хендлер, содержащий статичный файл index.html.
 func (h *Handler) StaticFileHandler(w http.ResponseWriter, r *http.Request) {
 	addCORSHeaders(w)
 	absPath, err := filepath.Abs("./client/index.html")

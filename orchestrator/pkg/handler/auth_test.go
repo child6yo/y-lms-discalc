@@ -18,14 +18,14 @@ func TestCreateUser(t *testing.T) {
 	tests := []struct {
 		name         string
 		requestBody  string
-		mockFunc     func(*mock.MockService)
+		mockFunc     func(*mock.Service)
 		wantStatus   int
 		wantResponse string
 	}{
 		{
 			name:        "successful creation",
 			requestBody: `{"login":"test","password":"secret"}`,
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CreateUserFunc = func(user orchestrator.User) (int, error) {
 					return 123, nil
 				}
@@ -36,7 +36,7 @@ func TestCreateUser(t *testing.T) {
 		{
 			name:        "empty request body",
 			requestBody: "",
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CreateUserFunc = func(user orchestrator.User) (int, error) {
 					return 0, nil
 				}
@@ -47,7 +47,7 @@ func TestCreateUser(t *testing.T) {
 		{
 			name:        "invalid JSON",
 			requestBody: `{"login":invalid}`,
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CreateUserFunc = func(user orchestrator.User) (int, error) {
 					return 0, nil
 				}
@@ -58,7 +58,7 @@ func TestCreateUser(t *testing.T) {
 		{
 			name:        "service error",
 			requestBody: `{"login":"test","password":"secret"}`,
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CreateUserFunc = func(user orchestrator.User) (int, error) {
 					return 123, errors.New("something went wrong")
 				}
@@ -70,7 +70,7 @@ func TestCreateUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService := &mock.MockService{}
+			mockService := &mock.Service{}
 			tt.mockFunc(mockService)
 			handler := &Handler{service: mockService}
 
@@ -103,48 +103,48 @@ func TestAuth(t *testing.T) {
 	tests := []struct {
 		name         string
 		requestBody  string
-		mockFunc     func(*mock.MockService)
+		mockFunc     func(*mock.Service)
 		wantStatus   int
 		wantResponse string
 	}{
 		{
-			name: "successfull case",
+			name:        "successfull case",
 			requestBody: `{"login":"test","password":"secret"}`,
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.GenerateTokenFunc = func(username string, password string) (string, error) {
 					return "token", nil
 				}
 			},
-			wantStatus: 200,
+			wantStatus:   200,
 			wantResponse: `{"jwt":"token"}`,
 		},
 		{
-			name: "invalid body case",
+			name:        "invalid body case",
 			requestBody: ``,
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.GenerateTokenFunc = func(username string, password string) (string, error) {
 					return "", nil
 				}
 			},
-			wantStatus: 500,
+			wantStatus:   500,
 			wantResponse: `{"error":"Internal server error"}`,
 		},
 		{
-			name: "service error case",
+			name:        "service error case",
 			requestBody: `{"login":"test","password":"secret"}`,
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.GenerateTokenFunc = func(username string, password string) (string, error) {
 					return "", errors.New("something went wrong")
 				}
 			},
-			wantStatus: 422,
+			wantStatus:   422,
 			wantResponse: `{"error":"Login data is not valid"}`,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService := &mock.MockService{}
+			mockService := &mock.Service{}
 			tt.mockFunc(mockService)
 			handler := &Handler{service: mockService}
 

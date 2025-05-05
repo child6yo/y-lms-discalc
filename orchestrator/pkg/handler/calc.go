@@ -10,6 +10,10 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
+// CulculateExpression - хендлер, отвечающий за прием арифметических выражений.
+//
+// В случае успеха направляет выражение на обработку;
+// пользователю возвращает айди выражения, находящегося в обработке.
 func (h *Handler) CulculateExpression(w http.ResponseWriter, r *http.Request) {
 	var req orchestrator.ExpressionInput
 
@@ -26,19 +30,19 @@ func (h *Handler) CulculateExpression(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := getUserId(r)
+	userID, err := getUserID(r)
 	if err != nil {
 		httpNewError(w, 401, "JWT is not valid", err)
 		return
 	}
 
-	expId, err := h.service.CulculateExpression(userId, req.Expression)
+	expID, err := h.service.CulculateExpression(userID, req.Expression)
 	if err != nil {
 		httpNewError(w, 500, "Internal server error", err)
 		return
 	}
 
-	response := orchestrator.ExpressionId{Id: expId}
+	response := orchestrator.ExpressionID{ID: expID}
 	responseData, err := json.MarshalIndent(response, "", " ")
 	if err != nil {
 		httpNewError(w, 500, "Internal server error", err)
@@ -50,14 +54,17 @@ func (h *Handler) CulculateExpression(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseData)
 }
 
+// GetExpressions - хендлер, отвечающий за выдачу арифметических выражений.
+//
+// В случае успеха возвращает все выражения, созданные пользователем с их результатами.
 func (h *Handler) GetExpressions(w http.ResponseWriter, r *http.Request) {
-	userId, err := getUserId(r)
+	userID, err := getUserID(r)
 	if err != nil {
 		httpNewError(w, 401, "JWT is not valid", err)
 		return
 	}
 
-	result, err := h.service.GetExpressions(userId)
+	result, err := h.service.GetExpressions(userID)
 	if err != nil {
 		httpNewError(w, 500, "Internal server error", err)
 		return
@@ -74,7 +81,10 @@ func (h *Handler) GetExpressions(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseData)
 }
 
-func (h *Handler) GetExpressionById(w http.ResponseWriter, r *http.Request) {
+// GetExpressionByID - хендлер, отвечающий за выдачу арифметического выражения по айди.
+//
+// Возвращает пользователю выражение по айди в том случае если оно существует и было создано этим пользователем.
+func (h *Handler) GetExpressionByID(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	re := regexp.MustCompile(`/api/v1/expressions/(\d+)`)
@@ -84,19 +94,19 @@ func (h *Handler) GetExpressionById(w http.ResponseWriter, r *http.Request) {
 		httpNewError(w, 500, "Internal server error", nil)
 		return
 	}
-	expId, err := strconv.Atoi(matches[1])
+	expID, err := strconv.Atoi(matches[1])
 	if err != nil {
 		httpNewError(w, 500, "Internal server error", err)
 		return
 	}
 
-	userId, err := getUserId(r)
+	userID, err := getUserID(r)
 	if err != nil {
 		httpNewError(w, 401, "JWT is not valid", err)
 		return
 	}
 
-	result, err := h.service.GetExpressioById(userId, expId)
+	result, err := h.service.GetExpressioByID(userID, expID)
 	if err != nil {
 		httpNewError(w, 500, "Internal server error", err)
 		return

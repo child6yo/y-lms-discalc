@@ -8,7 +8,7 @@ import (
 
 func TestCache1(t *testing.T) {
 	cache := newExpressionCache(2)
-	
+
 	exp1 := &orchestrator.Expression{Result: 4, Expression: "2+2"}
 	exp2 := &orchestrator.Expression{Result: 6, Expression: "3+3"}
 	cache.Put(exp1)

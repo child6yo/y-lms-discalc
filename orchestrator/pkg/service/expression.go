@@ -6,27 +6,41 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-func (s *MainService) CulculateExpression(userId int, expression string) (int, error) {
+// CulculateExpression запускает вычисление арифметического выражения
+// и возвращает его айди.
+//
+// На вход принимает айди пользователя и выражение.
+//
+// В случае, если результат такого выражения есть в кеше, сразу же создает в базе данных
+// выражение с результатом, хранящимся в кеше.
+//
+// В случае, если такого выражения в кеше нет - передает его в канал обработки,
+// запуская процесс его вычисления.
+func (s *MainService) CulculateExpression(userID int, expression string) (int, error) {
 	cachedExp, exists := s.repo.Get(expression)
 	if !exists {
 		expEntity := orchestrator.Expression{Expression: expression, Status: "Calculating..."}
-		expId, err := s.repo.AddExpression(userId, &expEntity)
+		expID, err := s.repo.AddExpression(userID, &expEntity)
 		if err != nil {
 			return 0, err
 		}
-		expEntity.Id = strconv.Itoa(expId)
+		expEntity.ID = strconv.Itoa(expID)
 		*s.expChannel <- &expEntity
 
-		return expId, nil
+		return expID, nil
 	}
 
-	expId, err := s.repo.AddExpression(userId, cachedExp)
+	expID, err := s.repo.AddExpression(userID, cachedExp)
 	if err != nil {
 		return 0, err
 	}
-	return expId, nil
+	return expID, nil
 }
 
+// UpdateExpression используется обработчиком выражений для обновления результата вычисления
+// в базе данных.
+//
+// В случае, если при вычислении не произошло ошибок, также записывает его в кеш.
 func (s *MainService) UpdateExpression(result *orchestrator.Expression) error {
 	if result.Status != "ERROR" {
 		s.repo.Put(result)
@@ -35,10 +49,14 @@ func (s *MainService) UpdateExpression(result *orchestrator.Expression) error {
 	return s.repo.UpdateExpression(result)
 }
 
-func (s *MainService) GetExpressioById(userId, expId int) (*orchestrator.Expression, error) {
-	return s.repo.GetExpressionById(expId, userId)
+// GetExpressioByID возвращает выражение по его айди.
+// На вход принимает айди пользователя и айди выражения.
+func (s *MainService) GetExpressioByID(userID, expID int) (*orchestrator.Expression, error) {
+	return s.repo.GetExpressionByID(expID, userID)
 }
 
-func (s *MainService) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
-	return s.repo.GetExpressions(userId)
+// GetExpressions возращает слайс всех выражений пользователя.
+// На вход принимает айди пользователя.
+func (s *MainService) GetExpressions(userID int) (*[]orchestrator.Expression, error) {
+	return s.repo.GetExpressions(userID)
 }

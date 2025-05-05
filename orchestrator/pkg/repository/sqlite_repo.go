@@ -3,15 +3,14 @@ package repository
 import (
 	"context"
 	"database/sql"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	userTable = "user"
+	userTable       = "user"
 	expressionTable = "expression"
 )
 
+// NewSqliteDb создает новое подключение к локальному хранилищу sqlite.
 func NewSqliteDb() (*sql.DB, error) {
 	ctx := context.TODO()
 

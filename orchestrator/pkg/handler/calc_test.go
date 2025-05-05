@@ -20,7 +20,7 @@ func TestCulculateExpression(t *testing.T) {
 		name         string
 		requestBody  string
 		setupContext func(r *http.Request) *http.Request
-		mockFunc     func(*mock.MockService)
+		mockFunc     func(*mock.Service)
 		wantStatus   int
 		wantResponse string
 	}{
@@ -28,10 +28,10 @@ func TestCulculateExpression(t *testing.T) {
 			name:        "successfull case",
 			requestBody: `{"expression":"2+2*2"}`,
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
 					return 1, nil
 				}
@@ -43,10 +43,10 @@ func TestCulculateExpression(t *testing.T) {
 			name:        "unauthorize error",
 			requestBody: `{"expression":"2+2*2"}`,
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, nil)
+				ctx := context.WithValue(r.Context(), uID, nil)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
 					return 1, nil
 				}
@@ -58,10 +58,10 @@ func TestCulculateExpression(t *testing.T) {
 			name:        "invalid data error",
 			requestBody: `{"e":}`,
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
 					return 1, nil
 				}
@@ -73,10 +73,10 @@ func TestCulculateExpression(t *testing.T) {
 			name:        "invalid input error",
 			requestBody: `{"expression":"2+"}`,
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.CulculateExpressionFunc = func(userId int, expr string) (int, error) {
 					return 0, errors.New("something went wrong")
 				}
@@ -88,7 +88,7 @@ func TestCulculateExpression(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService := &mock.MockService{}
+			mockService := &mock.Service{}
 			tt.mockFunc(mockService)
 			handler := &Handler{service: mockService}
 
@@ -122,21 +122,21 @@ func TestGetExpressions(t *testing.T) {
 	tests := []struct {
 		name         string
 		setupContext func(r *http.Request) *http.Request
-		mockFunc     func(*mock.MockService)
+		mockFunc     func(*mock.Service)
 		wantStatus   int
 		wantResponse string
 	}{
 		{
 			name: "successfull case",
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.GetExpressionsFunc = func(userId int) (*[]orchestrator.Expression, error) {
 					return &[]orchestrator.Expression{
-						{Id: "1", Result: 4, Expression: "2+2", Status: "Success"},
-						{Id: "2", Result: 0, Expression: "2+", Status: "ERROR"}}, nil
+						{ID: "1", Result: 4, Expression: "2+2", Status: "Success"},
+						{ID: "2", Result: 0, Expression: "2+", Status: "ERROR"}}, nil
 				}
 			},
 			wantStatus: 200,
@@ -158,10 +158,10 @@ func TestGetExpressions(t *testing.T) {
 		{
 			name: "unauthorize error",
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, nil)
+				ctx := context.WithValue(r.Context(), uID, nil)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.GetExpressionsFunc = func(userId int) (*[]orchestrator.Expression, error) {
 					return &[]orchestrator.Expression{}, nil
 				}
@@ -172,10 +172,10 @@ func TestGetExpressions(t *testing.T) {
 		{
 			name: "service error",
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
+			mockFunc: func(ms *mock.Service) {
 				ms.GetExpressionsFunc = func(userId int) (*[]orchestrator.Expression, error) {
 					return nil, errors.New("something went wrong")
 				}
@@ -187,7 +187,7 @@ func TestGetExpressions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService := &mock.MockService{}
+			mockService := &mock.Service{}
 			tt.mockFunc(mockService)
 			handler := &Handler{service: mockService}
 
@@ -221,7 +221,7 @@ func TestGetExpressionsById(t *testing.T) {
 	tests := []struct {
 		name         string
 		setupContext func(r *http.Request) *http.Request
-		mockFunc     func(*mock.MockService)
+		mockFunc     func(*mock.Service)
 		path         string
 		wantStatus   int
 		wantResponse string
@@ -229,13 +229,13 @@ func TestGetExpressionsById(t *testing.T) {
 		{
 			name: "successfull case",
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
-				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+			mockFunc: func(ms *mock.Service) {
+				ms.GetExpressioByIDFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
 					return &orchestrator.Expression{
-						Id:         "1",
+						ID:         "1",
 						Result:     4,
 						Expression: "2+2",
 						Status:     "Success"}, nil
@@ -253,53 +253,53 @@ func TestGetExpressionsById(t *testing.T) {
 		{
 			name: "unauthorize error",
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, nil)
+				ctx := context.WithValue(r.Context(), uID, nil)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
-				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+			mockFunc: func(ms *mock.Service) {
+				ms.GetExpressioByIDFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
 					return &orchestrator.Expression{}, nil
 				}
 			},
-			path:       "/api/v1/expressions/1",
-			wantStatus: 401,
+			path:         "/api/v1/expressions/1",
+			wantStatus:   401,
 			wantResponse: `{"error":"JWT is not valid"}`,
 		},
 		{
 			name: "unknown path error",
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
-				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+			mockFunc: func(ms *mock.Service) {
+				ms.GetExpressioByIDFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
 					return &orchestrator.Expression{}, nil
 				}
 			},
-			path:       "/api/v1/expressions/one",
-			wantStatus: 500,
+			path:         "/api/v1/expressions/one",
+			wantStatus:   500,
 			wantResponse: `{"error":"Internal server error"}`,
 		},
 		{
 			name: "service error",
 			setupContext: func(r *http.Request) *http.Request {
-				ctx := context.WithValue(r.Context(), userID, 123)
+				ctx := context.WithValue(r.Context(), uID, 123)
 				return r.WithContext(ctx)
 			},
-			mockFunc: func(ms *mock.MockService) {
-				ms.GetExpressioByIdFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
+			mockFunc: func(ms *mock.Service) {
+				ms.GetExpressioByIDFunc = func(userId int, expId int) (*orchestrator.Expression, error) {
 					return nil, errors.New("something went wrong")
 				}
 			},
-			path:       "/api/v1/expressions/1",
-			wantStatus: 500,
+			path:         "/api/v1/expressions/1",
+			wantStatus:   500,
 			wantResponse: `{"error":"Internal server error"}`,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService := &mock.MockService{}
+			mockService := &mock.Service{}
 			tt.mockFunc(mockService)
 			handler := &Handler{service: mockService}
 
@@ -308,7 +308,7 @@ func TestGetExpressionsById(t *testing.T) {
 			req = tt.setupContext(req)
 
 			w := httptest.NewRecorder()
-			handler.GetExpressionById(w, req)
+			handler.GetExpressionByID(w, req)
 
 			resp := w.Result()
 			if resp.StatusCode != tt.wantStatus {

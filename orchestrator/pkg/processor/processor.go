@@ -12,8 +12,10 @@ import (
 )
 
 var (
+	// TaskResultChannels - глобальная мапа, синхронизующая обработку результатов вычисления задач.
 	TaskResultChannels sync.Map
-	globalTaskCounter  uint64
+
+	globalTaskCounter uint64
 )
 
 func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator.Task,
@@ -33,12 +35,12 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 			stack = append(stack, value)
 		} else {
 			if len(stack) < 2 {
-				expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
+				expession := orchestrator.Expression{ID: exp.ID, Result: 0, Status: "ERROR"}
 				err := service.UpdateExpression(&expession)
 				if err != nil {
 					log.Println("Something went wrong in processor 1: ", err)
 				}
-				log.Printf("Expression %s: insufficient operands for operator %s\n", exp.Id, token)
+				log.Printf("Expression %s: insufficient operands for operator %s\n", exp.ID, token)
 				debug <- expession
 				return
 			}
@@ -54,7 +56,7 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 			TaskResultChannels.Store(key, resultChan)
 
 			task := orchestrator.Task{
-				Id:            key,
+				ID:            key,
 				Arg1:          operandA,
 				Arg2:          operandB,
 				Operation:     token,
@@ -67,12 +69,12 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 			case res := <-resultChan:
 				TaskResultChannels.Delete(taskCounter)
 				if res.Status != "" {
-					expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
+					expession := orchestrator.Expression{ID: exp.ID, Result: 0, Status: "ERROR"}
 					err := service.UpdateExpression(&expession)
 					if err != nil {
 						log.Println("Something went wrong in processor 2: ", err)
 					}
-					log.Printf("Expression %s, task %s error: %v\n", exp.Id, task.Id, res.Status)
+					log.Printf("Expression %s, task %s error: %v\n", exp.ID, task.ID, res.Status)
 					debug <- expession
 					return
 				}
@@ -80,12 +82,12 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 				stack = append(stack, res.Result)
 			case <-time.After(task.OperationTime + 1*time.Second):
 				TaskResultChannels.Delete(taskCounter)
-				expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
+				expession := orchestrator.Expression{ID: exp.ID, Result: 0, Status: "ERROR"}
 				err := service.UpdateExpression(&expession)
 				if err != nil {
 					log.Println("Something went wrong in processor 3: ", err)
 				}
-				log.Printf("Expression %s, task %s timeout\n", exp.Id, task.Id)
+				log.Printf("Expression %s, task %s timeout\n", exp.ID, task.ID)
 				debug <- expession
 				return
 			}
@@ -93,26 +95,35 @@ func processExpression(exp orchestrator.Expression, taskChan *chan *orchestrator
 	}
 
 	if len(stack) != 1 {
-		expession := orchestrator.Expression{Id: exp.Id, Result: 0, Status: "ERROR"}
+		expession := orchestrator.Expression{ID: exp.ID, Result: 0, Status: "ERROR"}
 		err := service.UpdateExpression(&expession)
 		if err != nil {
 			log.Println("Something went wrong in processor 4: ", err)
 		}
-		log.Printf("Expression %s: invalid RPN, stack: %v\n", exp.Id, stack)
+		log.Printf("Expression %s: invalid RPN, stack: %v\n", exp.ID, stack)
 		debug <- expession
 		return
 	}
 	finalResult := stack[0]
-	expession := orchestrator.Expression{Id: exp.Id, Expression: exp.Expression, Status: "Success", Result: finalResult}
+	expession := orchestrator.Expression{ID: exp.ID, Expression: exp.Expression, Status: "Success", Result: finalResult}
 	err = service.UpdateExpression(&expession)
 	if err != nil {
 		log.Println("Something went wrong in processor 5: ", err)
 		debug <- expession
 	}
-	log.Printf("Expression %s computed successfully, result: %v\n", exp.Id, finalResult)
+	log.Printf("Expression %s computed successfully, result: %v\n", exp.ID, finalResult)
 	debug <- expession
 }
 
+// StartExpressionProcessor запускает новый обработчик арифметических выражений.
+//
+// Параметры:
+//   - input: указатель на канал, передающий арифметические выражения.
+//   - taskChan: указатель на канал, через который будут передаваться задачи на вычисление.
+//   - config: мапа конфига, содержащая кол-во времени на каждую арифметическую операцию.
+//   - service: интерфейс сервиса.
+//
+// Запускает отдельную горутину на каждое пришедшее арифметическое выражение.
 func StartExpressionProcessor(input *chan *orchestrator.Expression, taskChan *chan *orchestrator.Task,
 	config map[string]time.Duration, service service.Service) {
 	for exp := range *input {

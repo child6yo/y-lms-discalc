@@ -6,6 +6,8 @@ import (
 	"unicode"
 )
 
+// PostfixExpression разбивает арифметическое выражение в соответствии с обратной польской нотацией.
+// На вход принимает выражение.
 func (s *MainService) PostfixExpression(expression string) ([]string, error) {
 	tokens, err := tokenize(expression)
 	if err != nil {

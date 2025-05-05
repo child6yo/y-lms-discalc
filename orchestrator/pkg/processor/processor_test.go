@@ -11,7 +11,7 @@ import (
 )
 
 func TestExpressionProcessorSuccess(t *testing.T) {
-	expression := orchestrator.Expression{Id: "1", Expression: "2+2*2"}
+	expression := orchestrator.Expression{ID: "1", Expression: "2+2*2"}
 	expect := orchestrator.Expression{Result: 6, Status: "Success"}
 
 	taskc := make(chan *orchestrator.Task, 3)
@@ -25,7 +25,7 @@ func TestExpressionProcessorSuccess(t *testing.T) {
 		"/": 100 * time.Millisecond,
 	}
 
-	mockService := &mock.MockService{}
+	mockService := &mock.Service{}
 	mockService.PostfixExpressionFunc = func(expression string) ([]string, error) {
 		return []string{"2", "2", "2", "*", "+"}, nil
 	}
@@ -58,15 +58,15 @@ func TestExpressionProcessorSuccess(t *testing.T) {
 				}
 			}
 
-			res := orchestrator.Expression{Id: task.Id, Result: r, Status: err}
-			chInterface, _ := TaskResultChannels.Load(task.Id)
+			res := orchestrator.Expression{ID: task.ID, Result: r, Status: err}
+			chInterface, _ := TaskResultChannels.Load(task.ID)
 			resultChan, _ := chInterface.(chan orchestrator.Expression)
 			resultChan <- res
 		}
 	}()
 
 	select {
-	case answer := <- debugChan:
+	case answer := <-debugChan:
 		res := answer
 		if res.Status != expect.Status {
 			t.Fatalf("Test FAILED. Expected status: %s, Status: %s", expect.Status, res.Status)
@@ -81,7 +81,7 @@ func TestExpressionProcessorSuccess(t *testing.T) {
 }
 
 func TestExpressionProcessorFail(t *testing.T) {
-	expression := orchestrator.Expression{Id: "1", Expression: "2+2*"}
+	expression := orchestrator.Expression{ID: "1", Expression: "2+2*"}
 	expect := orchestrator.Expression{Result: 0, Status: "ERROR"}
 
 	taskc := make(chan *orchestrator.Task, 3)
@@ -95,7 +95,7 @@ func TestExpressionProcessorFail(t *testing.T) {
 		"/": 100 * time.Millisecond,
 	}
 
-	mockService := &mock.MockService{}
+	mockService := &mock.Service{}
 	mockService.PostfixExpressionFunc = func(expression string) ([]string, error) {
 		return []string{"2", "2", "2", "+"}, nil
 	}
@@ -128,15 +128,15 @@ func TestExpressionProcessorFail(t *testing.T) {
 				}
 			}
 
-			res := orchestrator.Expression{Id: task.Id, Result: r, Status: err}
-			chInterface, _ := TaskResultChannels.Load(task.Id)
+			res := orchestrator.Expression{ID: task.ID, Result: r, Status: err}
+			chInterface, _ := TaskResultChannels.Load(task.ID)
 			resultChan, _ := chInterface.(chan orchestrator.Expression)
 			resultChan <- res
 		}
 	}()
 
 	select {
-	case answer := <- debugChan:
+	case answer := <-debugChan:
 		res := answer
 		if res.Status != expect.Status {
 			t.Fatalf("Test FAILED. Expected status: %s, Status: %s", expect.Status, res.Status)

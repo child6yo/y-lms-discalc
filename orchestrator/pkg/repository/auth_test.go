@@ -115,7 +115,7 @@ func TestGetUser(t *testing.T) {
 				login:    "login",
 				password: "hash",
 			},
-			expect:  orchestrator.User{Id: 1, Login: "login", Password: "hash"},
+			expect:  orchestrator.User{ID: 1, Login: "login", Password: "hash"},
 			wantErr: false,
 		},
 		{
@@ -137,7 +137,7 @@ func TestGetUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mockFunc(tt.input, tt.expect.Id, tt.expect.Login, tt.expect.Password)
+			tt.mockFunc(tt.input, tt.expect.ID, tt.expect.Login, tt.expect.Password)
 
 			got, err := r.GetUser(tt.input.login, tt.input.password)
 			if tt.wantErr {

@@ -10,25 +10,35 @@ import (
 	pb "github.com/child6yo/y-lms-discalc/shared/proto"
 )
 
+// OrchestratorServiceServer определяет интерфейс gRPC сервера оркестратора.
+type OrchestratorServiceServer interface {
+	// GetTask возвращает задачу на вычисление арифметического выражения, если она имеется.
+	GetTask(context.Context, *pb.Empty) (*pb.TaskRequest, error)
+
+	// TakeResult принимает результат вычисления арифметического выражения.
+	TakeResult(context.Context, *pb.ResultResponse) (*pb.Empty, error)
+	mustEmbedUnimplementedOrchestratorServiceServer()
+}
+
+// Server реализует интерфейс gRPC сервера оркестратора.
 type Server struct {
 	pb.OrchestratorServiceServer
 	taskChan *chan *orchestrator.Task
 }
 
+// NewServer создает новый экземпляр сервера оркестратора.
+//
+// Параметры:
+//   - taskChan: указатель на канал передачи задач на вычисление арифметических выражений.
 func NewServer(taskChan *chan *orchestrator.Task) *Server {
 	return &Server{taskChan: taskChan}
 }
 
-type OrchestratorServiceServer interface {
-	GetTask(context.Context, *pb.Empty) (*pb.TaskRequest, error)
-	TakeResult(context.Context, *pb.ResultResponse) (*pb.Empty, error)
-	mustEmbedUnimplementedOrchestratorServiceServer()
-}
-
+// GetTask возвращает задачу на вычисление арифметического выражения, если она имеется.
 func (s *Server) GetTask(ctx context.Context, _ *pb.Empty) (*pb.TaskRequest, error) {
 	select {
-	case task := <- *s.taskChan:
-		return &pb.TaskRequest{Id: task.Id,
+	case task := <-*s.taskChan:
+		return &pb.TaskRequest{Id: task.ID,
 			Arg1:          float32(task.Arg1),
 			Arg2:          float32(task.Arg2),
 			Operation:     task.Operation,
@@ -38,6 +48,7 @@ func (s *Server) GetTask(ctx context.Context, _ *pb.Empty) (*pb.TaskRequest, err
 	}
 }
 
+// TakeResult принимает результат вычисления арифметического выражения.
 func (s *Server) TakeResult(ctx context.Context, result *pb.ResultResponse) (*pb.Empty, error) {
 	chInterface, ok := processor.TaskResultChannels.Load(result.Id)
 	if !ok {
@@ -49,7 +60,7 @@ func (s *Server) TakeResult(ctx context.Context, result *pb.ResultResponse) (*pb
 		return nil, errors.New("something went wrong")
 	}
 
-	res := orchestrator.Expression{Id: result.Id, Result: float64(result.Result), Status: result.Error}
+	res := orchestrator.Expression{ID: result.Id, Result: float64(result.Result), Status: result.Error}
 	resultChan <- res
 
 	return nil, nil

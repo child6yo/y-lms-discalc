@@ -21,6 +21,8 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
 	pb "github.com/child6yo/y-lms-discalc/shared/proto"
 	"google.golang.org/grpc"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func getEnv(key, defaultValue string) string {
@@ -50,7 +52,7 @@ type httpServer struct {
 	server *http.Server
 }
 
-func (h *httpServer) startHttpServer(port string, handler *h.Handler) error {
+func (h *httpServer) startHTTPServer(port string, handler *h.Handler) error {
 	http.HandleFunc("/api/v1/calculate", handler.AuthorizeMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handler.CulculateExpression(w, r)
@@ -73,7 +75,7 @@ func (h *httpServer) startHttpServer(port string, handler *h.Handler) error {
 			return
 		}
 		if r.Method == http.MethodGet {
-			handler.GetExpressionById(w, r)
+			handler.GetExpressionByID(w, r)
 		} else {
 			http.NotFound(w, r)
 		}
@@ -138,41 +140,55 @@ func (g *grpcServer) grpcServerShutdown() {
 }
 
 func main() {
+	// Загрузка конфигураций
 	config := map[string]time.Duration{}
 	config["+"] = time.Duration(getIntEnv("TIME_ADDITION_MS", 100) * int(time.Millisecond))
 	config["-"] = time.Duration(getIntEnv("TIME_SUBTRACTION_MS", 100) * int(time.Millisecond))
 	config["*"] = time.Duration(getIntEnv("TIME_MULTIPLICATIONS_MS", 100) * int(time.Millisecond))
 	config["/"] = time.Duration(getIntEnv("TIME_DIVISIONS_MS", 100) * int(time.Millisecond))
 
-	expressionInput := make(chan *orchestrator.Expression, 30)
-	tasks := make(chan *orchestrator.Task, 30)
-
 	httpPort := getEnv("HTTP_PORT", "8000")
 
-	gRPChost := getEnv("GRPC_HOST", "orchestrator")
+	gRPChost := getEnv("GRPC_HOST", "localhost")
 	gRPCport := getEnv("GRPC_PORT", "5000")
-	
+
+	// Создание каналов
+	expressionInput := make(chan *orchestrator.Expression, 30) // канал передачи арифметических выражений в обработчик
+	tasks := make(chan *orchestrator.Task, 30)                 // канал передачи задач на вычисление участков выражений
+
+	// Подключение к локальной базе данных sqlite
 	db, err := repository.NewSqliteDb()
 	if err != nil {
 		log.Fatal("failed to connect sqlight: ", err)
 	}
 
+	// создание нового экземпляра репозитория
 	repository := repository.NewRepository(db, 100)
 
+	// сроздание нового экземпляра сервиса
 	service := service.NewService(repository, &expressionInput)
+
+	// создание нового экземпляра сервиса
 	handler := h.NewHandler(service)
 
+	// запуск горутины обработчика арифметических выражений
 	go processor.StartExpressionProcessor(&expressionInput, &tasks, config, service)
 
+	// создание нового экземпляра http сервера
 	httpSrv := new(httpServer)
+
+	// запуск http сервера
 	go func() {
-		if err := httpSrv.startHttpServer(httpPort, handler); err != nil {
+		if err := httpSrv.startHTTPServer(httpPort, handler); err != nil {
 			log.Fatal("error starting http server: ", err)
 		}
 	}()
 	log.Println("http server started at port: ", httpPort)
 
+	// создание нового экземпляра gRPC сервера
 	grpcSrv := newGRPCServer()
+
+	// запуск gRPC сервера
 	go func() {
 		if err := grpcSrv.startGRPCServer(gRPChost, gRPCport, &tasks); err != nil {
 			log.Fatal("error serving grpc: ", err)
@@ -182,10 +198,12 @@ func main() {
 
 	log.Println("orchestrator successfully started")
 
+	// получение сигнала на остановку приложения (напр. Ctrl+C)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
 
+	// graceful shutdown
 	log.Print("orchestrator shutting down")
 
 	if err = httpSrv.httpServerShutdown(context.Background()); err != nil {

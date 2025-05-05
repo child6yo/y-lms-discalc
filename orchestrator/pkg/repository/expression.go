@@ -7,23 +7,27 @@ import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 )
 
-func (d *mainDatabase) AddExpression(userId int, expression *orchestrator.Expression) (int, error) {
+// AddExpression добавляет арифметическое выражение в БД.
+// На вход принимает айди пользователя и модель выражения.
+func (d *mainDatabase) AddExpression(userID int, expression *orchestrator.Expression) (int, error) {
 	query := fmt.Sprintf("INSERT INTO %s (user_id, exp, result, status) values ($1, $2, $3, $4)", expressionTable)
 
-	res, err := d.db.Exec(query, userId, expression.Expression, expression.Result, expression.Status)
+	res, err := d.db.Exec(query, userID, expression.Expression, expression.Result, expression.Status)
 	if err != nil {
 		return 0, err
 	}
-	expId, err := res.LastInsertId()
+	expID, err := res.LastInsertId()
 	if err != nil {
 		return 0, err
 	}
 
-	return int(expId), nil
+	return int(expID), nil
 }
 
+// UpdateExpression обновляет результат и статус арифметического выражения.
+// На вход принимает модель выражения.
 func (d *mainDatabase) UpdateExpression(expression *orchestrator.Expression) error {
-	id, err := strconv.Atoi(expression.Id)
+	id, err := strconv.Atoi(expression.ID)
 	if err != nil {
 		return err
 	}
@@ -36,13 +40,15 @@ func (d *mainDatabase) UpdateExpression(expression *orchestrator.Expression) err
 	return nil
 }
 
-func (d *mainDatabase) GetExpressionById(expId, userId int) (*orchestrator.Expression, error) {
+// GetExpressionById возвращает арифметическое выражение по его айди.
+// На вход принимает айди выражения и айди пользователя.
+func (d *mainDatabase) GetExpressionByID(expID, userID int) (*orchestrator.Expression, error) {
 	var result orchestrator.Expression
 
 	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1 AND id=$2", expressionTable)
 
-	row := d.db.QueryRow(query, userId, expId)
-	err := row.Scan(&result.Id, &result.Result, &result.Expression, &result.Status)
+	row := d.db.QueryRow(query, userID, expID)
+	err := row.Scan(&result.ID, &result.Result, &result.Expression, &result.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +56,13 @@ func (d *mainDatabase) GetExpressionById(expId, userId int) (*orchestrator.Expre
 	return &result, nil
 }
 
-func (d *mainDatabase) GetExpressions(userId int) (*[]orchestrator.Expression, error) {
+// GetExpressions возвращает слайс арифметических выражений, принадлежащих пользователю.
+// На вход принимает айди пользователя.
+func (d *mainDatabase) GetExpressions(userID int) (*[]orchestrator.Expression, error) {
 	var result []orchestrator.Expression
 
 	query := fmt.Sprintf("SELECT id, result, exp, status FROM %s WHERE user_id=$1", expressionTable)
-	rows, err := d.db.Query(query, userId)
+	rows, err := d.db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +70,7 @@ func (d *mainDatabase) GetExpressions(userId int) (*[]orchestrator.Expression, e
 
 	for rows.Next() {
 		r := orchestrator.Expression{}
-		err := rows.Scan(&r.Id, &r.Result, &r.Expression, &r.Status)
+		err := rows.Scan(&r.ID, &r.Result, &r.Expression, &r.Status)
 		if err != nil {
 			return nil, err
 		}
