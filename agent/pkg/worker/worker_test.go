@@ -52,7 +52,7 @@ func TestWorker(t *testing.T) {
 				}, nil
 			},
 			evaluate: func(task agent.Task) agent.Result {
-				return agent.Result{Id: task.Id, Result: 15}
+				return agent.Result{ID: task.ID, Result: 15}
 			},
 			takeResult: func(ctx context.Context, in *pb.ResultResponse, opts ...grpc.CallOption) (*pb.Empty, error) {
 				if in.Id != "1" || in.Result != 15 {
@@ -74,7 +74,7 @@ func TestWorker(t *testing.T) {
 				}, nil
 			},
 			evaluate: func(task agent.Task) agent.Result {
-				return agent.Result{Id: task.Id, Error: "division by zero"}
+				return agent.Result{ID: task.ID, Error: "division by zero"}
 			},
 			takeResult: func(ctx context.Context, in *pb.ResultResponse, opts ...grpc.CallOption) (*pb.Empty, error) {
 				t.Error("TakeResult should not be called on evaluation error")

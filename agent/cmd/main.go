@@ -55,7 +55,7 @@ func main() {
 	grpcClient := pb.NewOrchestratorServiceClient(conn)
 
 	computingPower := getIntEnv("COMPUTING_POWER", 10)
-	evaluater := service.NewEvaluateService()
+	evaluater := new(service.EvaluateService)
 
 	var wg sync.WaitGroup
 

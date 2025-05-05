@@ -16,54 +16,54 @@ func TestEvaluatePostfix(t *testing.T) {
 	}{
 		{
 			name: "Addition",
-			task: agent.Task{Id: "1", Operation: "+", Arg1: 5, Arg2: 3},
+			task: agent.Task{ID: "1", Operation: "+", Arg1: 5, Arg2: 3},
 			expectedResult: agent.Result{
-				Id:     "1",
+				ID:     "1",
 				Result: 8,
 				Error:  "",
 			},
 		},
 		{
 			name: "Subtraction",
-			task: agent.Task{Id: "2", Operation: "-", Arg1: 5, Arg2: 3},
+			task: agent.Task{ID: "2", Operation: "-", Arg1: 5, Arg2: 3},
 			expectedResult: agent.Result{
-				Id:     "2",
+				ID:     "2",
 				Result: 2,
 				Error:  "",
 			},
 		},
 		{
 			name: "Multiplication",
-			task: agent.Task{Id: "3", Operation: "*", Arg1: 5, Arg2: 3},
+			task: agent.Task{ID: "3", Operation: "*", Arg1: 5, Arg2: 3},
 			expectedResult: agent.Result{
-				Id:     "3",
+				ID:     "3",
 				Result: 15,
 				Error:  "",
 			},
 		},
 		{
 			name: "Division",
-			task: agent.Task{Id: "4", Operation: "/", Arg1: 6, Arg2: 3},
+			task: agent.Task{ID: "4", Operation: "/", Arg1: 6, Arg2: 3},
 			expectedResult: agent.Result{
-				Id:     "4",
+				ID:     "4",
 				Result: 2,
 				Error:  "",
 			},
 		},
 		{
 			name: "Division by Zero",
-			task: agent.Task{Id: "5", Operation: "/", Arg1: 5, Arg2: 0},
+			task: agent.Task{ID: "5", Operation: "/", Arg1: 5, Arg2: 0},
 			expectedResult: agent.Result{
-				Id:     "5",
+				ID:     "5",
 				Result: 0,
 				Error:  "division by zero",
 			},
 		},
 		{
 			name: "Unknown Operator",
-			task: agent.Task{Id: "6", Operation: "^", Arg1: 5, Arg2: 3},
+			task: agent.Task{ID: "6", Operation: "^", Arg1: 5, Arg2: 3},
 			expectedResult: agent.Result{
-				Id:     "6",
+				ID:     "6",
 				Result: 0,
 				Error:  "unknown operator",
 			},
