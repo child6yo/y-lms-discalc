@@ -7,7 +7,7 @@ import (
 
 	"github.com/child6yo/y-lms-discalc/agent"
 	"github.com/child6yo/y-lms-discalc/agent/pkg/service"
-	pb "github.com/child6yo/y-lms-discalc/shared/proto"
+	pb "github.com/child6yo/y-lms-discalc/agent/proto"
 )
 
 // Worker - воркер, выполняющий обработку арифметических выражений.

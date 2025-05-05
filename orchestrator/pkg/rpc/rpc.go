@@ -7,7 +7,7 @@ import (
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
 	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
-	pb "github.com/child6yo/y-lms-discalc/shared/proto"
+	pb "github.com/child6yo/y-lms-discalc/orchestrator/proto"
 )
 
 // OrchestratorServiceServer определяет интерфейс gRPC сервера оркестратора.
