@@ -10,13 +10,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// данные тесты проверяют пингуются ли функции
+// Данные тесты проверяют пингуются ли функции
 // без полноценных проверок их функционала
 
-const (
-	srvHttpUrl = "localhost:8000"
-	srvGrpcUrl = "localhost:5000"
-)
+const srvGrpcUrl = "localhost:50051"
 
 func TestOrchestratorGetTask(t *testing.T) {
 	conn, err := grpc.NewClient(srvGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
