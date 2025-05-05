@@ -149,7 +149,7 @@ func main() {
 
 	httpPort := getEnv("HTTP_PORT", "8000")
 
-	gRPChost := getEnv("GRPC_HOST", "localhost")
+	gRPChost := getEnv("GRPC_HOST", "127.0.0.1")
 	gRPCport := getEnv("GRPC_PORT", "5000")
 
 	// Создание каналов

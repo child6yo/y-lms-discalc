@@ -13,7 +13,7 @@ import (
 // Данные тесты проверяют пингуются ли функции
 // без полноценных проверок их функционала
 
-const srvGrpcUrl = "localhost:5000"
+const srvGrpcUrl = "127.0.0.1:5000"
 
 func TestOrchestratorGetTask(t *testing.T) {
 	conn, err := grpc.NewClient(srvGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
