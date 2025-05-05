@@ -1,372 +1,521 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Калькулятор</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --accent: #007bff;
+      --success: #28a745;
+      --error: #dc3545;
+      --calculating: #ffc107;
+    }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1e1e1e;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: #fff;
+    }
 
-        .main-container {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            max-width: 900px;
-        }
+    .page {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
 
-        .calculator-container {
-            background: linear-gradient(145deg, #2a2a2a, #232323);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-        }
+    .page.active {
+      display: flex;
+    }
 
-        .history-container {
-            background: linear-gradient(145deg, #2a2a2a, #232323);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
 
-        h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
 
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 8px;
-            background-color: #333;
-            color: #fff;
-            font-size: 18px;
-            text-align: center;
-            outline: none;
-        }
+    input, button {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: none;
+      outline: none;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      cursor: pointer;
+    }
 
-        .buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 10px 0;
-        }
+    input {
+      background: #2c2c2c;
+      color: white;
+    }
 
-        .buttons button {
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: #444;
-            color: #fff;
-            font-size: 18px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-        }
+    button {
+      background: var(--accent);
+      color: white;
+    }
 
-        .buttons button:hover {
-            background-color: #555;
-            transform: scale(1.05);
-        }
+    button:hover {
+      background: #0056b3;
+    }
 
-        .buttons button.operator {
-            background-color: #ff4c4c;
-        }
+    .link {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
 
-        .buttons button.operator:hover {
-            background-color: #e03a3a;
-        }
+    .calculator-input {
+      font-size: 1.5rem;
+      text-align: right;
+      background: #2c2c2c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+    }
 
-        .calculate-btn,
-        .search-btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: #ff4c4c;
-            color: #fff;
-            font-size: 18px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-            margin-top: 10px;
-        }
+    .calculator-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
 
-        .calculate-btn:hover,
-        .search-btn:hover {
-            background-color: #e03a3a;
-            transform: scale(1.05);
-        }
+    .calculator-buttons button {
+      padding: 1rem;
+      background: #333;
+      color: white;
+    }
 
-        .error-message {
-            color: #e74c3c;
-            font-weight: bold;
-            margin-top: 10px;
-            display: none;
-        }
+    .calculator-buttons button:hover {
+      background: #444;
+    }
 
-        .history-content {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #444;
-            border-radius: 8px;
-            padding: 10px;
-            background-color: #292929;
-        }
+    .results {
+      margin-top: 2rem;
+    }
 
-        .expression-item {
-            background-color: #333;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #444;
-        }
+    .expression {
+      background: #2a2a2a;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      border-left: 5px solid var(--calculating);
+      opacity: 0;
+      animation: fadeShow 0.5s forwards;
+    }
 
-        .status {
-            font-weight: bold;
-        }
+    .expression.success {
+      border-left-color: var(--success);
+    }
 
-        .status-calculating {
-            color: #ff9e00;
-        }
+    .expression.error {
+      border-left-color: var(--error);
+    }
 
-        .status-error {
-            color: #e74c3c;
-        }
+    .expression.calculating {
+      border-left-color: var(--calculating);
+    }
 
-        .status-success {
-            color: #2ecc71;
-        }
-    </style>
+    @keyframes fadeShow {
+      to {
+        opacity: 1;
+      }
+    }
+
+    .status-notification {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      background: #2a2a2a;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border-left: 4px solid;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .status-notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .status-notification.success {
+      border-left-color: var(--success);
+    }
+
+    .status-notification.error {
+      border-left-color: var(--error);
+    }
+
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: #333;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+  </style>
 </head>
-
 <body>
+  <!-- Уведомления -->
+  <div id="notification" class="notification"></div>
+  <div id="status-notification" class="status-notification"></div>
 
-    <div class="main-container">
-        <!-- Калькулятор -->
-        <div class="calculator-container">
-            <h1>Калькулятор</h1>
-            <input type="text" id="expression" placeholder="Введите выражение" readonly>
-
-            <!-- Кнопки калькулятора -->
-            <div class="buttons">
-                <button onclick="appendToExpression('7')">7</button>
-                <button onclick="appendToExpression('8')">8</button>
-                <button onclick="appendToExpression('9')">9</button>
-                <button class="operator" onclick="appendToExpression('/')">/</button>
-                <button onclick="appendToExpression('4')">4</button>
-                <button onclick="appendToExpression('5')">5</button>
-                <button onclick="appendToExpression('6')">6</button>
-                <button class="operator" onclick="appendToExpression('*')">*</button>
-                <button onclick="appendToExpression('1')">1</button>
-                <button onclick="appendToExpression('2')">2</button>
-                <button onclick="appendToExpression('3')">3</button>
-                <button class="operator" onclick="appendToExpression('-')">-</button>
-                <button onclick="appendToExpression('0')">0</button>
-                <button onclick="appendToExpression('.')">.</button>
-                <button class="operator" onclick="appendToExpression('+')">+</button>
-                <button onclick="appendToExpression('(')">(</button>
-                <button onclick="appendToExpression(')')">)</button>
-                <button onclick="clearExpression()">C</button>
-            </div>
-
-            <button class="calculate-btn" id="calculate-btn">Вычислить</button>
-
-            <div class="error-message" id="error-message"></div>
-        </div>
-
-        <!-- История и поиск по ID -->
-        <div class="history-container">
-            <h1>История вычислений</h1>
-            <input type="text" id="searchId" placeholder="Введите ID выражения">
-            <button class="search-btn" onclick="fetchExpressionById()">Найти по ID</button>
-
-            <div class="history-content" id="history-content">
-                <div class="no-data" id="no-data">Нет доступных вычислений.</div>
-            </div>
-        </div>
+  <!-- Регистрация -->
+  <div id="register-page" class="page active">
+    <div class="card">
+      <h2>Регистрация</h2>
+      <input type="text" id="reg-login" placeholder="Логин" />
+      <input type="password" id="reg-password" placeholder="Пароль" />
+      <button onclick="register()">Зарегистрироваться</button>
+      <div class="link"><a href="#" onclick="showLogin()">Уже есть аккаунт? Войдите</a></div>
     </div>
+  </div>
 
-    <script>
-        const API_BASE_URL = 'http://localhost:8000/api/v1';
+  <!-- Вход -->
+  <div id="login-page" class="page">
+    <div class="card">
+      <h2>Вход</h2>
+      <input type="text" id="login-login" placeholder="Логин" />
+      <input type="password" id="login-password" placeholder="Пароль" />
+      <button onclick="login()">Войти</button>
+      <div class="link"><a href="#" onclick="showRegister()">Нет аккаунта? Зарегистрируйтесь</a></div>
+    </div>
+  </div>
 
-        // Добавление символов в поле ввода
-        function appendToExpression(value) {
-            const expressionInput = document.getElementById("expression");
-            expressionInput.value += value;
-        }
+  <!-- Калькулятор -->
+  <div id="calculator-page" class="page">
+    <div class="card">
+      <h2>Калькулятор</h2>
+      <input type="text" id="expression" class="calculator-input" placeholder="Введите выражение" readonly />
+      <div class="calculator-buttons">
+        <button onclick="append('7')">7</button>
+        <button onclick="append('8')">8</button>
+        <button onclick="append('9')">9</button>
+        <button onclick="append('/')">÷</button>
+        <button onclick="append('4')">4</button>
+        <button onclick="append('5')">5</button>
+        <button onclick="append('6')">6</button>
+        <button onclick="append('*')">×</button>
+        <button onclick="append('1')">1</button>
+        <button onclick="append('2')">2</button>
+        <button onclick="append('3')">3</button>
+        <button onclick="append('-')">−</button>
+        <button onclick="append('0')">0</button>
+        <button onclick="append('.')">.</button>
+        <button onclick="clearExpr()">C</button>
+        <button onclick="append('+')">+</button>
+        <button style="grid-column: span 4;" onclick="submitExpression()">Вычислить</button>
+      </div>
+      <div class="results" id="results">
+        <h3>Результаты</h3>
+      </div>
+    </div>
+  </div>
 
-        // Очистка поля ввода
-        function clearExpression() {
-            const expressionInput = document.getElementById("expression");
-            expressionInput.value = "";
-        }
+  <script>
+    const API_URL = 'http://localhost:8000/api/v1';
+    const jwt = localStorage.getItem('jwt');
+    let activeExpressions = [];
 
-        // Отправка выражения на сервер
-        document.getElementById("calculate-btn").addEventListener("click", async () => {
-            const expression = document.getElementById("expression").value;
-            const errorMessage = document.getElementById("error-message");
+    const notification = document.getElementById('notification');
+    const statusNotification = document.getElementById('status-notification');
 
-            errorMessage.style.display = "none";
-            errorMessage.innerHTML = "";
+    if (jwt) {
+      showCalculator();
+    }
 
-            if (!expression) {
-                showError("Введите выражение!");
-                return;
-            }
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/calculate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ expression })
-                });
+    function showRegister() {
+      showPage('register-page');
+    }
 
-                if (!response.ok) {
-                    throw new Error("Ошибка на сервере!");
-                }
+    function showLogin() {
+      showPage('login-page');
+    }
 
-                const data = await response.json();
-                await fetchResults();
-            } catch (error) {
-                showError(error.message);
-            }
+    function showCalculator() {
+      showPage('calculator-page');
+      fetchExpressions();
+    }
+
+    function notify(msg) {
+      notification.textContent = msg;
+      notification.classList.add('show');
+      setTimeout(() => notification.classList.remove('show'), 3000);
+    }
+
+    function showStatusNotification(message, type = 'success') {
+      statusNotification.className = `status-notification ${type} show`;
+      statusNotification.textContent = message;
+      setTimeout(() => {
+        statusNotification.classList.remove('show');
+      }, 4000);
+    }
+
+    function append(char) {
+      const expr = document.getElementById('expression');
+      expr.value += char;
+    }
+
+    function clearExpr() {
+      document.getElementById('expression').value = '';
+    }
+
+    async function register() {
+      const login = document.getElementById('reg-login').value;
+      const password = document.getElementById('reg-password').value;
+
+      try {
+        const res = await fetch(`${API_URL}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, password })
         });
 
-        // Поиск выражения по ID
-        async function fetchExpressionById() {
-            const expressionId = document.getElementById("searchId").value;
-            const errorMessage = document.getElementById("error-message");
-
-            errorMessage.style.display = "none";
-            errorMessage.innerHTML = "";
-
-            if (!expressionId) {
-                showError("Введите ID выражения!");
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/expressions/${expressionId}`);
-                if (!response.ok) throw new Error("Ошибка загрузки данных!");
-
-                const data = await response.json();
-                const historyContent = document.getElementById("history-content");
-
-                historyContent.innerHTML = '';
-
-                const expressionElement = document.createElement("div");
-                expressionElement.className = "expression-item";
-
-                let statusText = "Неизвестно", statusClass = "";
-                if (data.expression.status === "Calculating...") {
-                    statusText = "Вычисляется...";
-                    statusClass = "status-calculating";
-                } else if (data.expression.status === "ERROR") {
-                    statusText = "Ошибка!";
-                    statusClass = "status-error";
-                } else if (data.expression.status === "Success") {
-                    statusText = "Успешно!";
-                    statusClass = "status-success";
-                }
-
-                expressionElement.innerHTML = `
-                    <div>
-                        <p><strong>ID:</strong> ${data.expression.id}</p>
-                        <p><strong>Статус:</strong> <span class="status ${statusClass}">${statusText}</span></p>
-                        <p><strong>Результат:</strong> ${data.expression.result !== null ? data.expression.result : '—'}</p>
-                    </div>
-                `;
-
-                historyContent.appendChild(expressionElement);
-            } catch (error) {
-                showError(error.message);
-            }
+        if (!res.ok) {
+          notify(`Ошибка регистрации: ${res.status}`);
+          return;
         }
 
-        // Загрузка всех выражений
-        async function fetchResults() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/expressions`);
-                if (!response.ok) throw new Error("Ошибка загрузки данных!");
+        const data = await res.json();
+        notify('Регистрация успешна!');
+        showLogin();
+      } catch (err) {
+        notify('Ошибка регистрации');
+        console.error(err);
+      }
+    }
 
-                const data = await response.json();
-                const historyContent = document.getElementById("history-content");
+    async function login() {
+      const login = document.getElementById('login-login').value;
+      const password = document.getElementById('login-password').value;
 
-                historyContent.innerHTML = '';
+      try {
+        const res = await fetch(`${API_URL}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, password })
+        });
 
-                // Сортировка по ID
-                data.expressions.sort((a, b) => a.id - b.id);
-
-                data.expressions.forEach(expression => {
-                    const expressionElement = document.createElement("div");
-                    expressionElement.className = "expression-item";
-
-                    let statusText = "Неизвестно", statusClass = "";
-                    if (expression.status === "Calculating...") {
-                        statusText = "Вычисляется...";
-                        statusClass = "status-calculating";
-                    } else if (expression.status === "ERROR") {
-                        statusText = "Ошибка!";
-                        statusClass = "status-error";
-                    } else if (expression.status === "Success") {
-                        statusText = "Успешно!";
-                        statusClass = "status-success";
-                    }
-
-                    expressionElement.innerHTML = `
-                        <div>
-                            <p><strong>ID:</strong> ${expression.id}</p>
-                            <p><strong>Статус:</strong> <span class="status ${statusClass}">${statusText}</span></p>
-                            <p><strong>Результат:</strong> ${expression.result !== null ? expression.result : '—'}</p>
-                        </div>
-                    `;
-
-                    historyContent.appendChild(expressionElement);
-                });
-            } catch (error) {
-                showError(error.message);
-            }
+        if (!res.ok) {
+          notify(`Ошибка входа: ${res.status}`);
+          return;
         }
 
-        // Отображение ошибок
-        function showError(message) {
-            const errorMessage = document.getElementById("error-message");
-            errorMessage.style.display = "block";
-            errorMessage.innerHTML = message;
+        const data = await res.json();
+        localStorage.setItem('jwt', data.jwt);
+        notify('Вы вошли!');
+        showCalculator();
+      } catch (err) {
+        notify('Ошибка входа');
+        console.error(err);
+      }
+    }
+
+    async function submitExpression() {
+      const expr = document.getElementById('expression').value;
+      const jwt = localStorage.getItem('jwt');
+
+      if (!expr.trim()) {
+        notify('Введите выражение');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/calculate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`
+          },
+          body: JSON.stringify({ expression: expr })
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            notify('Сессия истекла. Войдите снова.');
+            localStorage.removeItem('jwt');
+            setTimeout(showLogin, 2000);
+            return;
+          }
+          notify(`Ошибка отправки: ${res.status}`);
+          return;
         }
 
-        // Загрузка выражений при загрузке страницы
-        window.onload = async () => {
-            await fetchResults();
-        };
-    </script>
+        const data = await res.json();
+        notify('Выражение отправлено!');
+        clearExpr();
 
+        const exprID = data.id;
+        localStorage.setItem(`expr_${exprID}`, JSON.stringify({
+          id: exprID,
+          expression: expr,
+          error: 'Calculating'
+        }));
+        activeExpressions.push(exprID);
+        renderExpression({ id: exprID, expression: expr, error: 'Calculating' });
+      } catch (err) {
+        notify('Ошибка отправки выражения');
+        console.error(err);
+      }
+    }
+
+    async function fetchExpressionsFromAPI() {
+      const jwt = localStorage.getItem('jwt');
+
+      try {
+        const res = await fetch(`${API_URL}/expressions`, {
+          headers: {
+            'Authorization': `Bearer ${jwt}`
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            notify('Сессия истекла. Войдите снова.');
+            localStorage.removeItem('jwt');
+            setTimeout(showLogin, 2000);
+            return;
+          }
+          return;
+        }
+
+        const data = await res.json();
+        const expressions = data.expressions || [];
+
+        expressions.forEach(expr => {
+          const stored = JSON.parse(localStorage.getItem(`expr_${expr.id}`));
+          const hasChanged = stored && stored.error !== expr.error;
+
+          if (hasChanged) {
+            showStatusNotification(`Выражение ID: ${expr.id} — ${expr.error}`, expr.error === 'Success' ? 'success' : expr.error === 'ERROR' ? 'error' : 'calculating');
+          }
+
+          localStorage.setItem(`expr_${expr.id}`, JSON.stringify(expr));
+          updateExpressionDisplay(expr);
+        });
+      } catch (err) {
+        console.error('Ошибка:', err);
+      }
+    }
+
+    function updateExpressionDisplay(expr) {
+      const resultsDiv = document.getElementById('results');
+      const existing = document.getElementById(`expr-${expr.id}`);
+
+      const statusClass = expr.error === 'ERROR' ? 'error' : expr.error === 'Success' ? 'success' : 'calculating';
+
+      if (existing) {
+        existing.className = `expression ${statusClass}`;
+        existing.innerHTML = `<strong>ID:</strong> ${expr.id}<br><strong>Выражение:</strong> ${expr.expression}<br><strong>Статус:</strong> ${expr.error}${expr.result ? `<br><strong>Результат:</strong> ${expr.result}` : ''}`;
+      } else {
+        const div = document.createElement('div');
+        div.id = `expr-${expr.id}`;
+        div.className = `expression ${statusClass}`;
+        div.innerHTML = `<strong>ID:</strong> ${expr.id}<br><strong>Выражение:</strong> ${expr.expression}<br><strong>Статус:</strong> ${expr.error}${expr.result ? `<br><strong>Результат:</strong> ${expr.result}` : ''}`;
+        resultsDiv.appendChild(div);
+      }
+    }
+
+    function pollExpressions() {
+      fetchExpressionsFromAPI();
+      setTimeout(pollExpressions, 3000);
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '<h3>Результаты</h3>';
+      activeExpressions = [];
+    }
+
+    function fetchExpressions() {
+      clearResults();
+      const stored = Object.keys(localStorage).filter(k => k.startsWith('expr_'));
+
+      stored.forEach(key => {
+        const expr = JSON.parse(localStorage.getItem(key));
+        activeExpressions.push(expr.id);
+        renderExpression(expr);
+      });
+
+      pollExpressions();
+    }
+
+    function renderExpression(expr) {
+      const resultsDiv = document.getElementById('results');
+      const statusClass = expr.error === 'ERROR' ? 'error' : expr.error === 'Success' ? 'success' : 'calculating';
+      const div = document.createElement('div');
+      div.id = `expr-${expr.id}`;
+      div.className = `expression ${statusClass}`;
+      div.innerHTML = `<strong>ID:</strong> ${expr.id}<br><strong>Выражение:</strong> ${expr.expression}<br><strong>Статус:</strong> ${expr.error}${expr.result ? `<br><strong>Результат:</strong> ${expr.result}` : ''}`;
+      resultsDiv.appendChild(div);
+    }
+
+    async function fetchExpressionById(id) {
+      const jwt = localStorage.getItem('jwt');
+
+      try {
+        const res = await fetch(`${API_URL}/expressions/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${jwt}`
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            notify('Сессия истекла. Войдите снова.');
+            localStorage.removeItem('jwt');
+            setTimeout(showLogin, 2000);
+            return;
+          }
+          return;
+        }
+
+        const expr = await res.json();
+        const stored = JSON.parse(localStorage.getItem(`expr_${expr.id}`));
+
+        if (stored && stored.error !== expr.error) {
+          showStatusNotification(`Выражение ID: ${expr.id} — ${expr.error}`, expr.error === 'Success' ? 'success' : expr.error === 'ERROR' ? 'error' : 'calculating');
+        }
+
+        localStorage.setItem(`expr_${expr.id}`, JSON.stringify(expr));
+        updateExpressionDisplay(expr);
+      } catch (err) {
+        console.error('Ошибка:', err);
+      }
+    }
+  </script>
 </body>
-
 </html>
