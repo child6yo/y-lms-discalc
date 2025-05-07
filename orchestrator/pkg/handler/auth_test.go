@@ -66,6 +66,17 @@ func TestCreateUser(t *testing.T) {
 			wantStatus:   http.StatusInternalServerError,
 			wantResponse: `{"error":"Internal server error"}`,
 		},
+		{
+			name:        "empty data",
+			requestBody: `{}`,
+			mockFunc: func(ms *mock.Service) {
+				ms.CreateUserFunc = func(user orchestrator.User) (int, error) {
+					return 123, nil
+				}
+			},
+			wantStatus:   http.StatusBadRequest,
+			wantResponse: `{"error":"Login and password are required"}`,
+		},
 	}
 
 	for _, tt := range tests {

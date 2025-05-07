@@ -22,7 +22,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user orchestrator.User
 
 	data, err := io.ReadAll(r.Body)
-	if err != nil || len(data) == 0 {
+	if err != nil || len(data) == 0 { 
 		httpNewError(w, 500, "Internal server error", err)
 		return
 	}
@@ -31,6 +31,11 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(data, &user)
 	if err != nil {
 		httpNewError(w, 422, "Registration data is not valid", err)
+		return
+	}
+
+	if user.Login == "" || user.Password == "" {
+		httpNewError(w, 400, "Login and password are required", nil)
 		return
 	}
 
@@ -82,7 +87,7 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.service.GenerateToken(in.Login, in.Password)
 	if err != nil {
-		httpNewError(w, 422, "Login data is not valid", err)
+		httpNewError(w, 400, "Login data is not valid", err)
 		return
 	}
 
