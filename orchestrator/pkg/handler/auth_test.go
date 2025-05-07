@@ -148,7 +148,7 @@ func TestAuth(t *testing.T) {
 					return "", errors.New("something went wrong")
 				}
 			},
-			wantStatus:   422,
+			wantStatus:   400,
 			wantResponse: `{"error":"Login data is not valid"}`,
 		},
 	}
