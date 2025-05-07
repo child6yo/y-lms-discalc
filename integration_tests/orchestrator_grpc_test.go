@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	pb "github.com/child6yo/y-lms-discalc/shared/proto"
+	pb "github.com/child6yo/y-lms-discalc/integration_tests/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

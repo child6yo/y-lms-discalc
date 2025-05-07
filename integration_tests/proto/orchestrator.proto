@@ -1,0 +1,25 @@
+syntax = "proto3"; 
+package orchestrator; 
+option go_package = "github.com/child6yo/y-lms-discalc/orchestrator/proto";
+
+message TaskRequest {
+    string id = 1;
+    float arg1 = 2;
+    float arg2 = 3;
+    string operation = 4;
+    int64 operationTime = 5;
+}
+
+message ResultResponse {
+    string id = 1;
+    float result = 2;
+    string error = 3;
+}
+
+message Empty {}
+
+
+service OrchestratorService {
+    rpc GetTask (Empty) returns (TaskRequest);
+    rpc TakeResult (ResultResponse) returns (Empty);
+}
