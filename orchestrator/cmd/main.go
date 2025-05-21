@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	h "github.com/child6yo/y-lms-discalc/orchestrator/pkg/handler"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/repository"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/rpc"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
+	h "github.com/child6yo/y-lms-discalc/orchestrator/internal/app/handler"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/processor"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/repository"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/rpc"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/service"
 	pb "github.com/child6yo/y-lms-discalc/orchestrator/proto"
 	"google.golang.org/grpc"
 

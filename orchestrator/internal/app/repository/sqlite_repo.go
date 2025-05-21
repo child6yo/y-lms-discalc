@@ -14,7 +14,7 @@ const (
 func NewSqliteDb() (*sql.DB, error) {
 	ctx := context.TODO()
 
-	db, err := sql.Open("sqlite3", "database/discalc.db")
+	db, err := sql.Open("sqlite3", "internal/database/discalc.db")
 	if err != nil {
 		return nil, err
 	}

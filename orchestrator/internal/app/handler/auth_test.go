@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service/mock"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/service/mock"
 )
 
 func TestCreateUser(t *testing.T) {

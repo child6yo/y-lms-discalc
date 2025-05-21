@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/service"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/service"
 )
 
 var (

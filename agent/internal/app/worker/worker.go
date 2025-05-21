@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/agent"
-	"github.com/child6yo/y-lms-discalc/agent/pkg/service"
+	"github.com/child6yo/y-lms-discalc/agent/internal/app/service"
 	pb "github.com/child6yo/y-lms-discalc/agent/proto"
 )
 

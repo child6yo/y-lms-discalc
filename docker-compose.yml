@@ -5,7 +5,7 @@ services:
     build: ./orchestrator
     command: ./orchestrator
     volumes:
-      - ./orchestrator/database:/orchestrator/database
+      - ./orchestrator/internal/database:/orchestrator/internal/database
     ports:
       - 8000:8000
     environment:

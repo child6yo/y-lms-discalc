@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/repository"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/repository"
 )
 
 // Service определяет интерфейс сервиса, содержащего всю бизнес-логику.

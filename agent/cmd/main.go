@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/child6yo/y-lms-discalc/agent/pkg/service"
-	"github.com/child6yo/y-lms-discalc/agent/pkg/worker"
+	"github.com/child6yo/y-lms-discalc/agent/internal/app/service"
+	"github.com/child6yo/y-lms-discalc/agent/internal/app/worker"
 
 	pb "github.com/child6yo/y-lms-discalc/agent/proto"
 	"google.golang.org/grpc"

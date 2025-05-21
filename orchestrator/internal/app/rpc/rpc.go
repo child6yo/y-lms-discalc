@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/child6yo/y-lms-discalc/orchestrator"
-	"github.com/child6yo/y-lms-discalc/orchestrator/pkg/processor"
+	"github.com/child6yo/y-lms-discalc/orchestrator/internal/app/processor"
 	pb "github.com/child6yo/y-lms-discalc/orchestrator/proto"
 )
 
